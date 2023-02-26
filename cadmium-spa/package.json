@@ -2,6 +2,11 @@
   "name": "cadmium-spa",
   "version": "0.1.0",
   "private": true,
+  "description": "An attempt at making a CAD app",
+  "author": "Matthew Ferraro",
+  "main": "main.js",
+  "license": "MIT",
+  "homepage": "./",
   "dependencies": {
     "@emotion/react": "^11.10.6",
     "@mantine/core": "^5.10.4",
@@ -21,7 +26,8 @@
     "start": "react-scripts start",
     "build": "react-scripts build",
     "test": "react-scripts test",
-    "eject": "react-scripts eject"
+    "eject": "react-scripts eject",
+    "elect": "electron ."
   },
   "eslintConfig": {
     "extends": [
@@ -40,5 +46,8 @@
       "last 1 firefox version",
       "last 1 safari version"
     ]
+  },
+  "devDependencies": {
+    "electron": "^23.1.1"
   }
 }
