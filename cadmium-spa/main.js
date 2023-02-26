@@ -1,7 +1,6 @@
 const { app, BrowserWindow } = require('electron')
 
 const createWindow = () => {
-  console.log(`Hello from Electron 👋 Creating window`)
   const win = new BrowserWindow({
     width: 1200,
     height: 800,
@@ -11,7 +10,8 @@ const createWindow = () => {
 
 // On Windows or Linux, a user closing all windows means kill everything
 app.on('window-all-closed', () => {
-  if (process.platform !== 'darwin') app.quit()
+  // if (process.platform !== 'darwin') app.quit()
+  app.quit()
 })
 
 app.whenReady().then(() => {
