@@ -10,6 +10,7 @@ npm start
 ```
 
 To run the electron version in local dev:
+
 ```
 npm run build
 npm run elect
