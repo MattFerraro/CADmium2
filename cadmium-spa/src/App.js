@@ -2,13 +2,27 @@ import './App.css';
 import React, { useRef, useState } from 'react'
 import { Canvas, useFrame } from '@react-three/fiber'
 import { AppShell, Navbar, Header } from '@mantine/core';
-import { MantineProvider } from '@mantine/core';
+import { MantineProvider, ColorSchemeProvider } from '@mantine/core';
+import { useHotkeys, useLocalStorage } from '@mantine/hooks';
+
 
 function App() {
+  const [colorScheme, setColorScheme] = useLocalStorage({
+    key: 'mantine-color-scheme',
+    defaultValue: 'light',
+    getInitialValueInEffect: true,
+  });
+
+  const toggleColorScheme = (value) =>
+    setColorScheme(value || (colorScheme === 'dark' ? 'light' : 'dark'));
+
+  useHotkeys([['mod+J', () => toggleColorScheme()]]);
+
   return (
     <div className="App">
       <header className="App-header">
-        <MantineProvider theme={{ colorScheme: 'light' }} withGlobalStyles withNormalizeCSS>
+      <ColorSchemeProvider colorScheme={colorScheme} toggleColorScheme={toggleColorScheme}>
+        <MantineProvider theme={{ colorScheme }} withGlobalStyles withNormalizeCSS>
           <AppShell
             padding="md"
             navbar={<Navbar width={{ base: 300 }} height={500} p="xs">{/* Navbar content */}</Navbar>}
@@ -17,14 +31,15 @@ function App() {
               main: { backgroundColor: theme.colorScheme === 'dark' ? theme.colors.dark[8] : theme.colors.gray[0] },
             })}
           >
-          <Canvas style={{height: 350}}>
-            <ambientLight />
-            <pointLight position={[10, 10, 10]} />
-            <Box position={[-1.2, 0, 0]} />
-            <Box position={[1.2, 0, 0]} />
-          </Canvas>    
+            <Canvas style={{height: 350}}>
+              <ambientLight />
+              <pointLight position={[10, 10, 10]} />
+              <Box position={[-1.2, 0, 0]} />
+              <Box position={[1.2, 0, 0]} />
+            </Canvas>    
           </AppShell>
         </MantineProvider>
+      </ColorSchemeProvider>
       </header>
     </div>
   );
