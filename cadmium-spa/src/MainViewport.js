@@ -2,6 +2,7 @@ import './App.css'
 import React, { useRef, useState } from 'react'
 import { Canvas, useFrame } from '@react-three/fiber'
 import { CameraControls } from '@react-three/drei'
+import * as THREE from 'three';
 
 function MainViewport() {
   return (
@@ -9,9 +10,24 @@ function MainViewport() {
       <CameraControls />
       <ambientLight />
       <pointLight position={[10, 10, 10]} />
-      <Box position={[-1.2, 0, 0]} />
-      <Box position={[1.2, 0, 0]} />
+      <Plane></Plane>
     </Canvas>
+  )
+}
+
+function Plane(props) {
+  const ref = useRef()
+  const [hovered, hover] = useState(false)
+  return (
+    <mesh
+      {...props}
+      ref={ref}
+      onPointerOver={(event) => hover(true)}
+      onPointerOut={(event) => hover(false)}
+    >
+      <planeGeometry args={[2, 2]} />
+      <meshStandardMaterial color={hovered ? 'hotpink' : 'orange'} side={THREE.DoubleSide} />
+    </mesh>
   )
 }
 

@@ -1,9 +1,11 @@
 import './App.css'
-import React, { useRef, useState } from 'react'
+import React, { useEffect, useRef, useState } from 'react'
 import { AppShell, Navbar, Header } from '@mantine/core'
 import { MantineProvider, ColorSchemeProvider } from '@mantine/core'
 import { useHotkeys, useLocalStorage } from '@mantine/hooks'
 import MainWindow from './MainWindow'
+import init, { greet } from "hello-wasm";
+
 
 function App() {
   const [colorScheme, setColorScheme] = useLocalStorage({
@@ -11,6 +13,16 @@ function App() {
     defaultValue: 'light',
     getInitialValueInEffect: true,
   })
+
+
+  useEffect(() => {
+    console.log("In use effect though")
+    init().then(() => {
+      greet("WebAssembly");
+      greet("matt");
+    });
+  }, [])
+
 
   const toggleColorScheme = (value) =>
     setColorScheme(value || (colorScheme === 'dark' ? 'light' : 'dark'))
