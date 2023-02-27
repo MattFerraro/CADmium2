@@ -1,13 +1,31 @@
 import './App.css'
-import React, { useRef, useState } from 'react'
+import React, { useCallback, useEffect, useRef, useState } from 'react'
 import { Canvas, useFrame } from '@react-three/fiber'
 import { CameraControls } from '@react-three/drei'
 import * as THREE from 'three';
 
+
+
+
 function MainViewport() {
+  const mouseConfig = useCallback((camControls) => {
+    if (camControls !== null) {
+      camControls.mouseButtons.middle = 8
+      camControls.mouseButtons.wheel = 8
+      camControls.mouseButtons.right = 1
+      camControls.mouseButtons.left = 0
+    }
+    //  NONE: 0,
+    // 	ROTATE: 1,
+    // 	TRUCK: 2,
+    // 	OFFSET: 4,
+    // 	DOLLY: 8,
+    // see https://github.com/yomotsu/camera-controls/blob/29eac5b50e69f0cf6792b8c3c12f5c86ad621222/src/types.ts
+  }, [])
+
   return (
-    <Canvas style={{ height: 350 }}>
-      <CameraControls />
+    <Canvas style={{ height: 600 }}>
+      <CameraControls ref={mouseConfig} />
       <ambientLight />
       <pointLight position={[10, 10, 10]} />
       <Plane></Plane>

@@ -18,8 +18,7 @@ function App() {
   useEffect(() => {
     console.log("In use effect though")
     init().then(() => {
-      greet("WebAssembly");
-      greet("matt");
+      greet("WebAssembly")
     });
   }, [])
 

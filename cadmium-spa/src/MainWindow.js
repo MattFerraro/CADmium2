@@ -8,7 +8,7 @@ function MainWindow() {
     <AppShell
       padding="md"
       navbar={
-        <Navbar width={{ base: 300 }} height={500} p="xs">
+        <Navbar width={{ base: 300 }} height={540} p="xs">
           {/* Navbar content */}
         </Navbar>
       }
