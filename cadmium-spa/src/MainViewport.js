@@ -2,10 +2,10 @@ import './App.css'
 import React, { useCallback, useEffect, useRef, useState } from 'react'
 import { Canvas, useFrame } from '@react-three/fiber'
 import { CameraControls } from '@react-three/drei'
-import * as THREE from 'three';
-
-
-
+import * as THREE from 'three'
+import init, * as Truck from 'truck-js'
+import { createVbo, createIbo } from './utils'
+import { useThree } from '@react-three/fiber'
 
 function MainViewport() {
   const mouseConfig = useCallback((camControls) => {
@@ -25,12 +25,90 @@ function MainViewport() {
 
   return (
     <Canvas style={{ height: 600 }}>
+      <TruckHandler></TruckHandler>
       <CameraControls ref={mouseConfig} />
       <ambientLight />
       <pointLight position={[10, 10, 10]} />
       <Plane></Plane>
+      <axesHelper></axesHelper>
     </Canvas>
   )
+}
+
+function TruckHandler(props) {
+  const state = useThree()
+  useEffect(() => {
+    init().then(() => {
+      const scene = state.scene
+      const v = Truck.vertex(-0.5, -0.5, -0.5)
+      const e = Truck.tsweep(v.upcast(), [1.0, 0.0, 0.0])
+      const f = Truck.tsweep(e, [0.0, 1.0, 0.0])
+      const abst = Truck.tsweep(f, [0.0, 0.0, 1.0])
+      const solid = abst.into_solid()
+      let polygon = solid.to_polygon(0.01)
+      const object = polygon.to_buffer()
+      let vBuffer = Array.from(object.vertex_buffer())
+      // vBuffer looks like:
+      // [x, y, z, u, v, nx, ny, nz]
+
+      let vertices = []
+      let uvs = []
+      let normals = []
+      for (let idx = 0; idx < vBuffer.length; idx++) {
+        const mod = idx % 8
+        const val = vBuffer[idx]
+        if (mod == 0 || (mod == 1) | (mod == 2)) {
+          vertices.push(val)
+        } else if (mod == 3 || mod == 4) {
+          uvs.push(val)
+        } else {
+          normals.push(val)
+        }
+      }
+      console.log('vertices', vertices)
+
+      let iBuffer = object.index_buffer()
+      iBuffer = Array.from(iBuffer)
+      let indexLength = object.index_buffer_size() / 4
+
+      const geometry = new THREE.BufferGeometry()
+
+      console.log('vBuffer', vBuffer)
+      console.log('iBuffer', iBuffer)
+      console.log('length', indexLength)
+
+      geometry.setAttribute(
+        'position',
+        new THREE.Float32BufferAttribute(vertices, 3)
+      )
+      geometry.setIndex(iBuffer)
+
+      const material = new THREE.MeshBasicMaterial({
+        color: 0xff0000,
+        side: THREE.DoubleSide,
+      })
+      const mesh = new THREE.Mesh(geometry, material)
+      scene.add(mesh)
+
+      // geometry.setAttribute('normal', new THREE.Float32BufferAttribute(normals, 3));
+      // geometry.setAttribute('color', new THREE.Float32BufferAttribute(colors, 3));
+
+      // greet("WebAssembly")
+      //   const matt = demo();
+      //   const jsony = JSON.parse(new TextDecoder().decode(matt))
+      //    console.log("um, hi", jsony);
+      // const vAttributes = createVbo(gl, vBuffer);
+      // gl.bindBuffer(gl.ARRAY_BUFFER, vAttributes);
+
+      // const vPositionLocation = gl.getAttribLocation(prg, "position");
+      // const vUVLocation = gl.getAttribLocation(prg, "uv");
+      // const vNormalLocation = gl.getAttribLocation(prg, "normal");
+
+      // const vIndex = createIbo(ctx, iBuffer);
+      // console.log(vIndex)
+    })
+  }, [])
+  return <></>
 }
 
 function Plane(props) {
@@ -44,7 +122,10 @@ function Plane(props) {
       onPointerOut={(event) => hover(false)}
     >
       <planeGeometry args={[2, 2]} />
-      <meshStandardMaterial color={hovered ? 'hotpink' : 'orange'} side={THREE.DoubleSide} />
+      <meshStandardMaterial
+        color={hovered ? 'hotpink' : 'orange'}
+        side={THREE.DoubleSide}
+      />
     </mesh>
   )
 }
