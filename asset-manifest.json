@@ -1,16 +1,16 @@
 {
   "files": {
-    "main.css": "/cadmium2/static/css/main.073c9b0a.css",
-    "main.js": "/cadmium2/static/js/main.d08f1d98.js",
-    "static/js/787.11f74825.chunk.js": "/cadmium2/static/js/787.11f74825.chunk.js",
-    "static/media/truck_js_bg.wasm": "/cadmium2/static/media/truck_js_bg.8737608510e2aeb33984.wasm",
-    "index.html": "/cadmium2/index.html",
-    "main.073c9b0a.css.map": "/cadmium2/static/css/main.073c9b0a.css.map",
-    "main.d08f1d98.js.map": "/cadmium2/static/js/main.d08f1d98.js.map",
-    "787.11f74825.chunk.js.map": "/cadmium2/static/js/787.11f74825.chunk.js.map"
+    "main.css": "https://mattferraro.github.io/CADmium2/static/css/main.073c9b0a.css",
+    "main.js": "https://mattferraro.github.io/CADmium2/static/js/main.86c28c74.js",
+    "static/js/787.11f74825.chunk.js": "https://mattferraro.github.io/CADmium2/static/js/787.11f74825.chunk.js",
+    "static/media/truck_js_bg.wasm": "https://mattferraro.github.io/CADmium2/static/media/truck_js_bg.8737608510e2aeb33984.wasm",
+    "index.html": "https://mattferraro.github.io/CADmium2/index.html",
+    "main.073c9b0a.css.map": "https://mattferraro.github.io/CADmium2/static/css/main.073c9b0a.css.map",
+    "main.86c28c74.js.map": "https://mattferraro.github.io/CADmium2/static/js/main.86c28c74.js.map",
+    "787.11f74825.chunk.js.map": "https://mattferraro.github.io/CADmium2/static/js/787.11f74825.chunk.js.map"
   },
   "entrypoints": [
     "static/css/main.073c9b0a.css",
-    "static/js/main.d08f1d98.js"
+    "static/js/main.86c28c74.js"
   ]
 }
