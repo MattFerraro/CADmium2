@@ -4,7 +4,6 @@ import { Canvas, useFrame } from '@react-three/fiber'
 import { CameraControls } from '@react-three/drei'
 import * as THREE from 'three'
 import init, * as Truck from 'truck-js'
-import { createVbo, createIbo } from './utils'
 import { useThree } from '@react-three/fiber'
 
 function MainViewport() {
@@ -23,13 +22,15 @@ function MainViewport() {
     // see https://github.com/yomotsu/camera-controls/blob/29eac5b50e69f0cf6792b8c3c12f5c86ad621222/src/types.ts
   }, [])
 
+  const overallScale = 1.1;
+
   return (
-    <Canvas style={{ height: 600 }}>
+    <Canvas camera={{ fov: 45, position: [1 * overallScale, 2 * overallScale, 1 * overallScale], up: [0, 0, 1] }} style={{ height: 600 }}>
       <TruckHandler></TruckHandler>
       <CameraControls ref={mouseConfig} />
       <ambientLight />
       <pointLight position={[10, 10, 10]} />
-      <Plane></Plane>
+      {/* <Plane></Plane> */}
       <axesHelper></axesHelper>
     </Canvas>
   )
@@ -40,32 +41,41 @@ function TruckHandler(props) {
   useEffect(() => {
     init().then(() => {
       const scene = state.scene
+
       const v = Truck.vertex(-0.5, -0.5, -0.5)
       const e = Truck.tsweep(v.upcast(), [1.0, 0.0, 0.0])
       const f = Truck.tsweep(e, [0.0, 1.0, 0.0])
       const abst = Truck.tsweep(f, [0.0, 0.0, 1.0])
       const solid = abst.into_solid()
-      let polygon = solid.to_polygon(0.01)
+
+      const v2 = Truck.vertex(-0.25, -0.25, -0.75)
+      const e2 = Truck.tsweep(v2.upcast(), [.5, 0.0, 0.0])
+      const f2 = Truck.tsweep(e2, [0.0, .5, 0.0])
+      const abst2 = Truck.tsweep(f2, [0.0, 0.0, 1.5])
+      const solid2 = abst2.into_solid()
+
+      const solid3 = Truck.and(solid, Truck.not(solid2))
+
+      let polygon = solid3.to_polygon(0.01)
       const object = polygon.to_buffer()
       let vBuffer = Array.from(object.vertex_buffer())
       // vBuffer looks like:
       // [x, y, z, u, v, nx, ny, nz]
-
       let vertices = []
       let uvs = []
       let normals = []
       for (let idx = 0; idx < vBuffer.length; idx++) {
         const mod = idx % 8
         const val = vBuffer[idx]
-        if (mod == 0 || (mod == 1) | (mod == 2)) {
+        if (mod === 0 || (mod === 1) | (mod === 2)) {
           vertices.push(val)
-        } else if (mod == 3 || mod == 4) {
+        } else if (mod === 3 || mod === 4) {
           uvs.push(val)
         } else {
           normals.push(val)
         }
       }
-      console.log('vertices', vertices)
+      // console.log('vertices', vertices)
 
       let iBuffer = object.index_buffer()
       iBuffer = Array.from(iBuffer)
@@ -73,17 +83,25 @@ function TruckHandler(props) {
 
       const geometry = new THREE.BufferGeometry()
 
-      console.log('vBuffer', vBuffer)
-      console.log('iBuffer', iBuffer)
-      console.log('length', indexLength)
+      // console.log('vBuffer', vBuffer)
+      // console.log('iBuffer', iBuffer)
+      // console.log('length', indexLength)
 
       geometry.setAttribute(
         'position',
         new THREE.Float32BufferAttribute(vertices, 3)
       )
+      geometry.setAttribute(
+        'normal',
+        new THREE.Float32BufferAttribute(normals, 3)
+      )
+      geometry.setAttribute(
+        'uv',
+        new THREE.Float32BufferAttribute(uvs, 3)
+      )
       geometry.setIndex(iBuffer)
 
-      const material = new THREE.MeshBasicMaterial({
+      const material = new THREE.MeshNormalMaterial({
         color: 0xff0000,
         side: THREE.DoubleSide,
       })
