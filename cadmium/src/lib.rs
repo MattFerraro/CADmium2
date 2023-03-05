@@ -67,6 +67,22 @@ pub struct Project {
     pub steps: Vec<Step>,
 }
 
+#[derive(Debug)]
+pub struct Mesh {
+    pub vertices: Vec<Point3D>,
+    pub normals: Vec<Point3D>,
+    pub uvs: Vec<Point2D>,
+    pub indices: Vec<u32>,
+}
+
+#[derive(Debug)]
+pub struct Representation {
+    pub points: Vec<(String, Point3D)>,
+    pub planes: Vec<(String, Plane)>,
+    pub sketches: Vec<(String, Sketch)>,
+    pub solids: Vec<(String, Mesh)>,
+}
+
 impl Project {
     pub fn add_point(&mut self, name: &str, p: Point3D) {
         self.steps.push(Step::NewPoint {
@@ -116,6 +132,23 @@ impl Project {
             }
         }
         return None;
+    }
+
+    pub fn get_representation(&self, steps: u32) -> Option<Representation> {
+        let mut repr = Representation {
+            points: vec![],
+            planes: vec![],
+            sketches: vec![],
+            solids: vec![],
+        };
+
+        for step in self.steps.iter() {
+            if let Step::NewPoint { point: p, name: n } = step {
+                repr.points.push((n.clone(), p.clone()))
+            }
+        }
+
+        Some(repr)
     }
 }
 

@@ -10,7 +10,7 @@ fn main() {
         y: 0.0,
         z: 0.0,
     };
-    project1.add_point("Set Origin", origin);
+    project1.add_point("Origin", origin);
 
     let x_axis: Point3D = Point3D {
         x: 1.0,
@@ -96,5 +96,7 @@ fn main() {
     };
     project1.add_extrusion("Ext1", ext1);
 
-    println!("{:?}", project1);
+    let repr = project1.get_representation(10);
+
+    println!("{:?}", repr);
 }
