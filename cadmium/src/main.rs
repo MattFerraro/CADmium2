@@ -10,11 +10,7 @@ fn main() {
         y: 0.0,
         z: 0.0,
     };
-    let step1: Step = Step::NewPoint {
-        name: String::from("Set Origin"),
-        point: origin,
-    };
-    project1.add_step(step1);
+    project1.add_point("Set Origin", origin);
 
     let x_axis: Point3D = Point3D {
         x: 1.0,
@@ -36,39 +32,24 @@ fn main() {
         x_axis: x_axis,
         y_axis: y_axis,
         normal: z_axis,
-        name: String::from("Top"),
     };
-    let step2 = Step::NewPlane {
-        name: String::from("Top Plane"),
-        plane: top_plane,
-    };
-    project1.add_step(step2);
+    project1.add_plane("Top", top_plane);
 
     let front_plane: Plane = Plane {
         origin: origin,
         x_axis: z_axis,
         y_axis: x_axis,
         normal: y_axis,
-        name: String::from("Front"),
     };
-    let step3 = Step::NewPlane {
-        name: String::from("Front Plane"),
-        plane: front_plane,
-    };
-    project1.add_step(step3);
+    project1.add_plane("Front", front_plane);
 
     let right_plane: Plane = Plane {
         origin: origin,
         x_axis: y_axis,
         y_axis: z_axis,
         normal: x_axis,
-        name: String::from("Right"),
     };
-    let step4 = Step::NewPlane {
-        name: String::from("Right Plane"),
-        plane: right_plane,
-    };
-    project1.add_step(step4);
+    project1.add_plane("Right", right_plane);
 
     let a: Point2D = Point2D { x: 0.0, y: 0.0 };
     let b: Point2D = Point2D { x: 1.0, y: 0.0 };
@@ -99,13 +80,9 @@ fn main() {
     let s: Sketch = Sketch {
         plane_name: "Top".to_string(),
         lines: vec![l1, l2, l3, l4],
-        rings: vec![vec![&l1, &l2, &l3, &l4]],
+        rings: vec![vec![0, 1, 2, 3]],
     };
-    let step5 = Step::NewSketch {
-        name: String::from("Sketch1"),
-        sketch: s,
-    };
-    project1.add_step(step5);
+    project1.add_sketch("Sketch1", s);
 
     let ext1: Extrusion = Extrusion {
         sketch_name: "Sketch1".to_string(),
@@ -117,11 +94,7 @@ fn main() {
             .unwrap()
             .normal,
     };
-    let step6 = Step::NewExtrusion {
-        name: "Extrusion1".to_string(),
-        extrusion: ext1,
-    };
-    project1.add_step(step6);
+    project1.add_extrusion("Ext1", ext1);
 
     println!("{:?}", project1);
 }

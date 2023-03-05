@@ -23,10 +23,10 @@ pub struct Line2D {
 }
 
 #[derive(Debug)]
-pub struct Sketch<'a> {
+pub struct Sketch {
     pub plane_name: String,
     pub lines: Vec<Line2D>,
-    pub rings: Vec<Vec<&'a Line2D>>,
+    pub rings: Vec<Vec<u32>>,
 }
 
 #[derive(Debug)]
@@ -35,7 +35,6 @@ pub struct Plane {
     pub x_axis: Point3D,
     pub y_axis: Point3D,
     pub normal: Point3D,
-    pub name: String,
 }
 
 #[derive(Debug)]
@@ -46,10 +45,10 @@ pub enum ExtrusionOperation {
 }
 
 #[derive(Debug)]
-pub enum Step<'a> {
+pub enum Step {
     NewPoint { name: String, point: Point3D },
     NewPlane { name: String, plane: Plane },
-    NewSketch { name: String, sketch: Sketch<'a> },
+    NewSketch { name: String, sketch: Sketch },
     NewExtrusion { name: String, extrusion: Extrusion },
 }
 
@@ -63,21 +62,44 @@ pub struct Extrusion {
 }
 
 #[derive(Debug)]
-pub struct Project<'a> {
+pub struct Project {
     pub name: String,
-    pub steps: Vec<Step<'a>>,
+    pub steps: Vec<Step>,
 }
 
-impl<'a> Project<'a> {
-    pub fn add_step(&mut self, step: Step<'a>) {
-        self.steps.push(step);
+impl Project {
+    pub fn add_point(&mut self, name: &str, p: Point3D) {
+        self.steps.push(Step::NewPoint {
+            name: name.to_owned(),
+            point: p,
+        });
+    }
+
+    pub fn add_plane(&mut self, name: &str, p: Plane) {
+        self.steps.push(Step::NewPlane {
+            name: name.to_owned(),
+            plane: p,
+        });
+    }
+
+    pub fn add_sketch(&mut self, name: &str, s: Sketch) {
+        self.steps.push(Step::NewSketch {
+            name: name.to_owned(),
+            sketch: s,
+        });
+    }
+
+    pub fn add_extrusion(&mut self, name: &str, e: Extrusion) {
+        self.steps.push(Step::NewExtrusion {
+            name: name.to_owned(),
+            extrusion: e,
+        });
     }
 
     pub fn get_plane(&self, name: &str) -> Option<&Plane> {
         for step in self.steps.iter() {
-            if let Step::NewPlane { plane: p, .. } = step {
-                let plane_name = &p.name;
-                if plane_name == name {
+            if let Step::NewPlane { plane: p, name: n } = step {
+                if n == name {
                     return Some(&p);
                 }
             }
