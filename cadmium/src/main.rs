@@ -78,7 +78,7 @@ fn main() {
     };
 
     let s: Sketch = Sketch {
-        plane_name: "Top".to_string(),
+        plane_name: "Front".to_string(),
         lines: vec![l1, l2, l3, l4],
         rings: vec![vec![0, 1, 2, 3]],
     };
@@ -96,7 +96,7 @@ fn main() {
     };
     project1.add_extrusion("Ext1", ext1);
 
-    let repr = project1.get_representation(10);
+    let repr = project1.get_representation(100).unwrap();
 
     println!("{:?}", repr);
 }
