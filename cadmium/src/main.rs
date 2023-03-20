@@ -1,92 +1,32 @@
 use cadmium::*;
 
 fn main() {
-    let mut project1: Project = Project {
-        name: "First Project!".to_string(),
-        steps: vec![],
-    };
-    let origin: Point3D = Point3D {
-        x: 0.0,
-        y: 0.0,
-        z: 0.0,
-    };
-    project1.add_point("Origin", origin);
+    let mut project1: Project = Project::new("First Project");
 
-    let x_axis: Point3D = Point3D {
-        x: 1.0,
-        y: 0.0,
-        z: 0.0,
-    };
-    let y_axis: Point3D = Point3D {
-        x: 0.0,
-        y: 1.0,
-        z: 0.0,
-    };
-    let z_axis: Point3D = Point3D {
-        x: 0.0,
-        y: 0.0,
-        z: 1.0,
-    };
-    let top_plane: Plane = Plane {
-        origin: origin,
-        x_axis: x_axis,
-        y_axis: y_axis,
-        normal: z_axis,
-    };
-    project1.add_plane("Top", top_plane);
-
-    let front_plane: Plane = Plane {
-        origin: origin,
-        x_axis: z_axis,
-        y_axis: x_axis,
-        normal: y_axis,
-    };
-    project1.add_plane("Front", front_plane);
-
-    let right_plane: Plane = Plane {
-        origin: origin,
-        x_axis: y_axis,
-        y_axis: z_axis,
-        normal: x_axis,
-    };
-    project1.add_plane("Right", right_plane);
-
+    //       c
+    //     / |
+    //   a---b
     let a: Point2D = Point2D { x: 0.0, y: 0.0 };
     let b: Point2D = Point2D { x: 1.0, y: 0.0 };
     let c: Point2D = Point2D { x: 1.0, y: 1.0 };
-    let d: Point2D = Point2D { x: 0.0, y: 1.0 };
+    // let d: Point2D = Point2D { x: 0.0, y: 1.0 };
 
-    let l1 = Line2D {
-        start: a,
-        end: b,
-        construction: false,
-    };
-    let l2 = Line2D {
-        start: b,
-        end: c,
-        construction: false,
-    };
-    let l3 = Line2D {
-        start: c,
-        end: d,
-        construction: false,
-    };
-    let l4 = Line2D {
-        start: d,
-        end: a,
-        construction: false,
-    };
+    let l1 = Line2D::new(a, b);
+    let l2 = Line2D::new(b, c);
+    let l3 = Line2D::new(c, a);
+    // let l4 = Line2D::new(d, a);
 
     let s: Sketch = Sketch {
         plane_name: "Front".to_string(),
-        lines: vec![l1, l2, l3, l4],
-        rings: vec![vec![0, 1, 2, 3]],
+        verticies: vec![a, b, c],
+        lines: vec![l1, l2, l3],
+        faces: vec![vec![0, 1, 2, 0]],
     };
     project1.add_sketch("Sketch1", s);
 
     let ext1: Extrusion = Extrusion {
         sketch_name: "Sketch1".to_string(),
-        rings: vec![0],
+        faces: vec![0],
         depth: 0.5,
         operation: ExtrusionOperation::New,
         direction: project1
@@ -98,5 +38,13 @@ fn main() {
 
     let repr = project1.get_representation(100).unwrap();
 
-    println!("{:?}", repr);
+    // println!("Points: {:?}", repr.points);
+    // println!("Planes: {:?}", repr.planes);
+    // println!("Sketches:\n{:?}", repr.sketches["Sketch1"].faces);
+    // println!("Solids:\n{:?}", repr.solids["Ext1"]);
+    let ext1_mesh = &repr.meshes["Ext1"][0];
+    // println!("Meshes:\n{:?}", ext1_mesh.uv_coords());
+
+    //TODO: make it write to .obj and .stl formats!
+    save_mesh_as_obj(ext1_mesh, "Ext1.obj");
 }
