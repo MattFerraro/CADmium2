@@ -121,7 +121,7 @@ pub struct Representation {
 pub struct Sketch {
     pub plane_name: String,
     pub lines: Vec<Line2D>,
-    pub faces: Vec<Vec<u32>>,
+    pub faces: Vec<Vec<usize>>,
     pub verticies: Vec<Point2D>,
 }
 
@@ -132,6 +132,7 @@ pub struct ConcreteSketch {
     pub wires: Vec<Wire>,
     pub faces: Vec<Face>,
     pub vertices: Vec<Point3D>,
+    truck_vertices: Vec<Vertex>,
 }
 
 impl ConcreteSketch {
@@ -142,6 +143,7 @@ impl ConcreteSketch {
             wires: vec![],
             faces: vec![],
             vertices: vec![],
+            truck_vertices: vec![],
         };
 
         let plane = p
@@ -166,6 +168,7 @@ impl ConcreteSketch {
             let y = y_axis.scale(v.y);
             let vertex = x.plus(y).plus(origin);
             cs.vertices.push(vertex);
+            cs.truck_vertices.push(vertex.to_vertex());
         }
 
         // TODO: should edges be represented as [start_vertex_index, end_vertex_index] instead of
@@ -203,16 +206,28 @@ impl ConcreteSketch {
         // https://stackoverflow.com/questions/12367801/finding-all-cycles-in-undirected-graphs
 
         // Let's fake it for now!
-        let v0 = cs.vertices[0].to_vertex();
-        let v1 = cs.vertices[1].to_vertex();
-        let v2 = cs.vertices[2].to_vertex();
-        let wire: Wire = vec![
-            builder::line(&v0, &v1),
-            builder::line(&v1, &v2),
-            builder::line(&v2, &v0),
-        ]
-        .into();
-        cs.wires.push(wire.clone());
+        // let v0 = cs.vertices[0].to_vertex();
+        // let v1 = cs.vertices[1].to_vertex();
+        // let v2 = cs.vertices[2].to_vertex();
+        // let v3 = cs.vertices[3].to_vertex();
+        // let mut wire: Wire = vec![].into();
+        // wire.push_back(builder::line(&v0, &v1));
+        // wire.push_back(builder::line(&v1, &v2));
+        // wire.push_back(builder::line(&v2, &v3));
+        // wire.push_back(builder::line(&v3, &v0));
+        // println!("\nFinished wire (A): {:?}", wire);
+        // cs.wires.push(wire.clone());
+
+        for face in s.faces.iter() {
+            let mut wire2: Wire = vec![].into();
+            for (vertex_id_a, vertex_id_b) in face.iter().zip(face.iter().skip(1)) {
+                let v0 = cs.truck_vertices.get(*vertex_id_a).expect("no such vertex");
+                let v1 = cs.truck_vertices.get(*vertex_id_b).expect("no such vertex");
+                let temp_line = builder::line(&v0, &v1);
+                wire2.push_back(temp_line);
+            }
+            cs.wires.push(wire2.clone());
+        }
 
         // working example from the reference repo!
         // let v0 = builder::vertex(Point3::new(0.0, 0.0, 0.0));
@@ -345,22 +360,15 @@ impl Project {
     pub fn extrude(&self, extrusion: &Extrusion, repr: &Representation) -> Vec<Solid> {
         let mut new_meshes: Vec<Solid> = vec![];
         let concrete_sketch = &repr.sketches[&extrusion.sketch_name];
-        // let faces = &repr.faces[extrusion.faces]
         for face_index in extrusion.faces.iter() {
-            // println!("A face index: {:?}", face_index);
             let face2 = &concrete_sketch.faces[*face_index];
-            // println!("A face: {:?}", face2);
-            // TODO: EXTRUDE IT! Return a mesh!
             let res = builder::tsweep(
                 face2,
                 extrusion.direction.scale(extrusion.depth).to_vector3(),
             );
-            // println!("\n\tExtrusion result: {:?}", res);
             new_meshes.push(res);
         }
 
-        // println!("Source Extrusion:\n{:?}", extrusion);
-        // println!("Source Concrete Sketche:\n{:?}", concrete_sketch.faces[0]);
         new_meshes
     }
 
@@ -471,6 +479,204 @@ mod tests {
 
         let local_filename = "triangular_prism.obj";
         save_mesh_as_obj(ext1_mesh, local_filename);
-        let _ = std::fs::remove_file(local_filename);
+        // let _ = std::fs::remove_file(local_filename);
     }
+
+    #[test]
+    fn rectangular_prism() {
+        let mut project1: Project = Project::new("First Project");
+
+        //   d------c
+        //   |      |
+        //   a------b
+        let a: Point2D = Point2D { x: 0.0, y: 0.0 };
+        let b: Point2D = Point2D { x: 2.0, y: 0.0 };
+        let c: Point2D = Point2D { x: 2.0, y: 1.0 };
+        let d: Point2D = Point2D { x: 0.0, y: 1.0 };
+
+        let l1 = Line2D::new(a, b);
+        let l2 = Line2D::new(b, c);
+        let l3 = Line2D::new(c, d);
+        let l4 = Line2D::new(d, a);
+
+        let s: Sketch = Sketch {
+            plane_name: "Front".to_string(),
+            verticies: vec![a, b, c, d],
+            lines: vec![l1, l2, l3, l4],
+            faces: vec![vec![0, 1, 2, 3, 0]],
+        };
+        project1.add_sketch("Sketch1", s);
+
+        let ext1: Extrusion = Extrusion {
+            sketch_name: "Sketch1".to_string(),
+            faces: vec![0],
+            depth: 0.5,
+            operation: ExtrusionOperation::New,
+            direction: project1
+                .get_plane(&project1.get_sketch("Sketch1").unwrap().plane_name)
+                .unwrap()
+                .normal,
+        };
+        project1.add_extrusion("Ext1", ext1);
+
+        let repr = project1.get_representation(100).unwrap();
+        let ext1_mesh = &repr.meshes["Ext1"][0];
+
+        let local_filename = "rectangular_prism.obj";
+        save_mesh_as_obj(ext1_mesh, local_filename);
+        // let _ = std::fs::remove_file(local_filename);
+    }
+
+    #[test]
+    fn pentagonal_prism() {
+        let mut project1: Project = Project::new("First Project");
+        //   e----d
+        //   |     \
+        //   |      c
+        //   |     /
+        //   a----b
+        let a: Point2D = Point2D { x: 0.0, y: 0.0 };
+        let b: Point2D = Point2D { x: 2.0, y: 0.0 };
+        let c: Point2D = Point2D { x: 2.7, y: 1.0 };
+        let d: Point2D = Point2D { x: 2.0, y: 2.0 };
+        let e: Point2D = Point2D { x: 0.0, y: 2.0 };
+
+        let l1 = Line2D::new(a, b);
+        let l2 = Line2D::new(b, c);
+        let l3 = Line2D::new(c, d);
+        let l4 = Line2D::new(d, e);
+        let l5 = Line2D::new(e, a);
+
+        let s: Sketch = Sketch {
+            plane_name: "Front".to_string(),
+            verticies: vec![a, b, c, d, e],
+            lines: vec![l1, l2, l3, l4, l5],
+            faces: vec![vec![0, 1, 2, 3, 4, 0]],
+        };
+        project1.add_sketch("Sketch1", s);
+
+        let ext1: Extrusion = Extrusion {
+            sketch_name: "Sketch1".to_string(),
+            faces: vec![0],
+            depth: 0.5,
+            operation: ExtrusionOperation::New,
+            direction: project1
+                .get_plane(&project1.get_sketch("Sketch1").unwrap().plane_name)
+                .unwrap()
+                .normal,
+        };
+        project1.add_extrusion("Ext1", ext1);
+
+        let repr = project1.get_representation(100).unwrap();
+        let ext1_mesh = &repr.meshes["Ext1"][0];
+
+        let local_filename = "pentagonal_prism.obj";
+        save_mesh_as_obj(ext1_mesh, local_filename);
+        // let _ = std::fs::remove_file(local_filename);
+    }
+
+    #[test]
+    fn two_triangles() {
+        let mut project1: Project = Project::new("First Project");
+        //   f---e    c
+        //   | /    / |
+        //   d    a---b
+        let a: Point2D = Point2D { x: 0.0, y: 0.0 };
+        let b: Point2D = Point2D { x: 1.0, y: 0.0 };
+        let c: Point2D = Point2D { x: 1.0, y: 1.0 };
+
+        let d: Point2D = Point2D { x: -1.0, y: 0.0 };
+        let e: Point2D = Point2D { x: 0.0, y: 1.0 };
+        let f: Point2D = Point2D { x: -1.0, y: 1.0 };
+
+        let l1 = Line2D::new(a, b);
+        let l2 = Line2D::new(b, c);
+        let l3 = Line2D::new(c, a);
+
+        let l4 = Line2D::new(d, e);
+        let l5 = Line2D::new(e, f);
+        let l6 = Line2D::new(f, d);
+
+        let s: Sketch = Sketch {
+            plane_name: "Front".to_string(),
+            verticies: vec![a, b, c, d, e, f],
+            lines: vec![l1, l2, l3, l4, l5, l6],
+            faces: vec![vec![0, 1, 2, 0], vec![3, 4, 5, 3]],
+        };
+        project1.add_sketch("Sketch1", s);
+
+        let ext1: Extrusion = Extrusion {
+            sketch_name: "Sketch1".to_string(),
+            faces: vec![0, 1],
+            depth: 0.5,
+            operation: ExtrusionOperation::New,
+            direction: project1
+                .get_plane(&project1.get_sketch("Sketch1").unwrap().plane_name)
+                .unwrap()
+                .normal,
+        };
+        project1.add_extrusion("Ext1", ext1);
+
+        let repr = project1.get_representation(100).unwrap();
+        let mut ext1_mesh_0 = repr.meshes["Ext1"][0].clone();
+        let ext1_mesh_1 = repr.meshes["Ext1"][1].clone();
+        ext1_mesh_0.merge(ext1_mesh_1);
+
+        let local_filename = "two_triangles.obj";
+        save_mesh_as_obj(&ext1_mesh_0, local_filename);
+        // let _ = std::fs::remove_file(local_filename);
+    }
+
+    // #[test]
+    // fn two_squares() {
+    //     let mut project1: Project = Project::new("First Project");
+    //     //   f----e
+    //     //   |    |
+    //     //   d----c
+    //     //   |    |
+    //     //   a----b
+    //     let a: Point2D = Point2D { x: 0.0, y: 0.0 };
+    //     let b: Point2D = Point2D { x: 1.0, y: 0.0 };
+    //     let c: Point2D = Point2D { x: 1.0, y: 1.0 };
+    //     let d: Point2D = Point2D { x: 0.0, y: 1.0 };
+
+    //     let e: Point2D = Point2D { x: 1.0, y: 2.0 };
+    //     let f: Point2D = Point2D { x: 0.0, y: 2.0 };
+
+    //     let l1 = Line2D::new(a, b);
+    //     let l2 = Line2D::new(b, c);
+    //     let l3 = Line2D::new(c, d);
+    //     let l4 = Line2D::new(d, a);
+
+    //     let l5 = Line2D::new(c, e);
+    //     let l6 = Line2D::new(e, f);
+    //     let l7 = Line2D::new(f, d);
+
+    //     let s: Sketch = Sketch {
+    //         plane_name: "Front".to_string(),
+    //         verticies: vec![a, b, c, d, e, f],
+    //         lines: vec![l1, l2, l3, l4, l5, l6, l7],
+    //         faces: vec![vec![0, 1, 2, 3, 0], vec![2, 4, 5, 3, 2]],
+    //     };
+    //     project1.add_sketch("Sketch1", s);
+
+    //     let ext1: Extrusion = Extrusion {
+    //         sketch_name: "Sketch1".to_string(),
+    //         faces: vec![0, 1],
+    //         depth: 0.5,
+    //         operation: ExtrusionOperation::New,
+    //         direction: project1
+    //             .get_plane(&project1.get_sketch("Sketch1").unwrap().plane_name)
+    //             .unwrap()
+    //             .normal,
+    //     };
+    //     project1.add_extrusion("Ext1", ext1);
+
+    //     let repr = project1.get_representation(100).unwrap();
+    //     let ext1_mesh = &repr.meshes["Ext1"][0];
+
+    //     let local_filename = "two_squares.obj";
+    //     save_mesh_as_obj(ext1_mesh, local_filename);
+    //     // let _ = std::fs::remove_file(local_filename);
+    // }
 }
