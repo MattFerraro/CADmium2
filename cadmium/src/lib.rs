@@ -19,6 +19,31 @@ pub struct Point3D {
     pub z: f64,
 }
 
+#[derive(Debug, Clone)]
+pub struct Ring {
+    // Ring represents a single closed loop
+    pub indices: Vec<usize>,
+}
+
+impl Ring {
+    pub fn new(indices: Vec<usize>) -> Ring {
+        Ring { indices: indices }
+    }
+}
+
+#[derive(Debug, Clone)]
+pub struct Polygon {
+    // Polygon represents a set of rings, potentially forming
+    // an anulus or figure 8 or something else complex
+    pub rings: Vec<Ring>,
+}
+
+impl Polygon {
+    pub fn new(rings: Vec<Ring>) -> Polygon {
+        Polygon { rings: rings }
+    }
+}
+
 impl Point3D {
     pub fn scale(&self, factor: f64) -> Point3D {
         Point3D {
@@ -121,7 +146,7 @@ pub struct Representation {
 pub struct Sketch {
     pub plane_name: String,
     pub lines: Vec<Line2D>,
-    pub faces: Vec<Vec<usize>>,
+    pub faces: Vec<Polygon>,
     pub verticies: Vec<Point2D>,
 }
 
@@ -130,6 +155,7 @@ pub struct ConcreteSketch {
     pub plane_name: String,
     pub edges: Vec<Edge>,
     pub wires: Vec<Wire>,
+    pub polygon_wires: Vec<Vec<Wire>>,
     pub faces: Vec<Face>,
     pub vertices: Vec<Point3D>,
     truck_vertices: Vec<Vertex>,
@@ -141,6 +167,7 @@ impl ConcreteSketch {
             plane_name: s.plane_name.to_owned(),
             edges: vec![],
             wires: vec![],
+            polygon_wires: vec![],
             faces: vec![],
             vertices: vec![],
             truck_vertices: vec![],
@@ -218,15 +245,21 @@ impl ConcreteSketch {
         // println!("\nFinished wire (A): {:?}", wire);
         // cs.wires.push(wire.clone());
 
-        for face in s.faces.iter() {
-            let mut wire2: Wire = vec![].into();
-            for (vertex_id_a, vertex_id_b) in face.iter().zip(face.iter().skip(1)) {
-                let v0 = cs.truck_vertices.get(*vertex_id_a).expect("no such vertex");
-                let v1 = cs.truck_vertices.get(*vertex_id_b).expect("no such vertex");
-                let temp_line = builder::line(&v0, &v1);
-                wire2.push_back(temp_line);
+        for polygon in s.faces.iter() {
+            let mut polygon_wires = vec![];
+            for ring in polygon.rings.iter() {
+                let mut wire2: Wire = vec![].into();
+                for (vertex_id_a, vertex_id_b) in
+                    ring.indices.iter().zip(ring.indices.iter().skip(1))
+                {
+                    let v0 = cs.truck_vertices.get(*vertex_id_a).expect("no such vertex");
+                    let v1 = cs.truck_vertices.get(*vertex_id_b).expect("no such vertex");
+                    let temp_line = builder::line(&v0, &v1);
+                    wire2.push_back(temp_line);
+                }
+                polygon_wires.push(wire2);
             }
-            cs.wires.push(wire2.clone());
+            cs.polygon_wires.push(polygon_wires);
         }
 
         // working example from the reference repo!
@@ -240,8 +273,8 @@ impl ConcreteSketch {
         // println!("My Plane: {:?}", plane);
         // end example
 
-        for w in cs.wires.iter() {
-            let f = Face::new(vec![w.clone()], plane0.clone());
+        for polygon_wire in cs.polygon_wires.iter() {
+            let f = Face::new(polygon_wire.clone(), plane0.clone());
             // let b = builder::try_attach_plane(&vec![w.clone()]);
             cs.faces.push(f);
         }
@@ -454,11 +487,14 @@ mod tests {
         let l2 = Line2D::new(b, c);
         let l3 = Line2D::new(c, a);
 
+        let r0 = Ring::new(vec![0, 1, 2, 0]);
+        let p0 = Polygon::new(vec![r0]);
+
         let s: Sketch = Sketch {
             plane_name: "Front".to_string(),
             verticies: vec![a, b, c],
             lines: vec![l1, l2, l3],
-            faces: vec![vec![0, 1, 2, 0]],
+            faces: vec![p0],
         };
         project1.add_sketch("Sketch1", s);
 
@@ -499,11 +535,14 @@ mod tests {
         let l3 = Line2D::new(c, d);
         let l4 = Line2D::new(d, a);
 
+        let r0 = Ring::new(vec![0, 1, 2, 3, 0]);
+        let p0 = Polygon::new(vec![r0]);
+
         let s: Sketch = Sketch {
             plane_name: "Front".to_string(),
             verticies: vec![a, b, c, d],
             lines: vec![l1, l2, l3, l4],
-            faces: vec![vec![0, 1, 2, 3, 0]],
+            faces: vec![p0],
         };
         project1.add_sketch("Sketch1", s);
 
@@ -547,11 +586,14 @@ mod tests {
         let l4 = Line2D::new(d, e);
         let l5 = Line2D::new(e, a);
 
+        let r0 = Ring::new(vec![0, 1, 2, 3, 4, 0]);
+        let p0 = Polygon::new(vec![r0]);
+
         let s: Sketch = Sketch {
             plane_name: "Front".to_string(),
             verticies: vec![a, b, c, d, e],
             lines: vec![l1, l2, l3, l4, l5],
-            faces: vec![vec![0, 1, 2, 3, 4, 0]],
+            faces: vec![p0],
         };
         project1.add_sketch("Sketch1", s);
 
@@ -597,11 +639,17 @@ mod tests {
         let l5 = Line2D::new(e, f);
         let l6 = Line2D::new(f, d);
 
+        let r0 = Ring::new(vec![0, 1, 2, 0]);
+        let p0 = Polygon::new(vec![r0]);
+
+        let r1 = Ring::new(vec![3, 4, 5, 3]);
+        let p1 = Polygon::new(vec![r1]);
+
         let s: Sketch = Sketch {
             plane_name: "Front".to_string(),
             verticies: vec![a, b, c, d, e, f],
             lines: vec![l1, l2, l3, l4, l5, l6],
-            faces: vec![vec![0, 1, 2, 0], vec![3, 4, 5, 3]],
+            faces: vec![p0, p1],
         };
         project1.add_sketch("Sketch1", s);
 
@@ -627,56 +675,60 @@ mod tests {
         // let _ = std::fs::remove_file(local_filename);
     }
 
-    // #[test]
-    // fn two_squares() {
-    //     let mut project1: Project = Project::new("First Project");
-    //     //   f----e
-    //     //   |    |
-    //     //   d----c
-    //     //   |    |
-    //     //   a----b
-    //     let a: Point2D = Point2D { x: 0.0, y: 0.0 };
-    //     let b: Point2D = Point2D { x: 1.0, y: 0.0 };
-    //     let c: Point2D = Point2D { x: 1.0, y: 1.0 };
-    //     let d: Point2D = Point2D { x: 0.0, y: 1.0 };
+    #[test]
+    fn anulus() {
+        let mut project1: Project = Project::new("First Project");
+        //  c
+        //
+        //     f
+        //
+        //     d   e
+        //  a            b
+        let a: Point2D = Point2D { x: 0.0, y: 0.0 };
+        let b: Point2D = Point2D { x: 3.5, y: 0.0 };
+        let c: Point2D = Point2D { x: 0.0, y: 3.5 };
 
-    //     let e: Point2D = Point2D { x: 1.0, y: 2.0 };
-    //     let f: Point2D = Point2D { x: 0.0, y: 2.0 };
+        let d: Point2D = Point2D { x: 1.0, y: 1.0 };
+        let e: Point2D = Point2D { x: 2.0, y: 1.0 };
+        let f: Point2D = Point2D { x: 1.0, y: 2.0 };
 
-    //     let l1 = Line2D::new(a, b);
-    //     let l2 = Line2D::new(b, c);
-    //     let l3 = Line2D::new(c, d);
-    //     let l4 = Line2D::new(d, a);
+        let l1 = Line2D::new(a, b);
+        let l2 = Line2D::new(b, c);
+        let l3 = Line2D::new(c, a);
 
-    //     let l5 = Line2D::new(c, e);
-    //     let l6 = Line2D::new(e, f);
-    //     let l7 = Line2D::new(f, d);
+        let l4 = Line2D::new(d, e);
+        let l5 = Line2D::new(e, f);
+        let l6 = Line2D::new(f, d);
 
-    //     let s: Sketch = Sketch {
-    //         plane_name: "Front".to_string(),
-    //         verticies: vec![a, b, c, d, e, f],
-    //         lines: vec![l1, l2, l3, l4, l5, l6, l7],
-    //         faces: vec![vec![0, 1, 2, 3, 0], vec![2, 4, 5, 3, 2]],
-    //     };
-    //     project1.add_sketch("Sketch1", s);
+        let r0 = Ring::new(vec![0, 1, 2, 0]);
+        let r1 = Ring::new(vec![3, 5, 4, 3]);
+        let p0 = Polygon::new(vec![r0, r1]);
 
-    //     let ext1: Extrusion = Extrusion {
-    //         sketch_name: "Sketch1".to_string(),
-    //         faces: vec![0, 1],
-    //         depth: 0.5,
-    //         operation: ExtrusionOperation::New,
-    //         direction: project1
-    //             .get_plane(&project1.get_sketch("Sketch1").unwrap().plane_name)
-    //             .unwrap()
-    //             .normal,
-    //     };
-    //     project1.add_extrusion("Ext1", ext1);
+        let s: Sketch = Sketch {
+            plane_name: "Front".to_string(),
+            verticies: vec![a, b, c, d, e, f],
+            lines: vec![l1, l2, l3, l4, l5, l6],
+            faces: vec![p0],
+        };
+        project1.add_sketch("Sketch1", s);
 
-    //     let repr = project1.get_representation(100).unwrap();
-    //     let ext1_mesh = &repr.meshes["Ext1"][0];
+        let ext1: Extrusion = Extrusion {
+            sketch_name: "Sketch1".to_string(),
+            faces: vec![0],
+            depth: 0.5,
+            operation: ExtrusionOperation::New,
+            direction: project1
+                .get_plane(&project1.get_sketch("Sketch1").unwrap().plane_name)
+                .unwrap()
+                .normal,
+        };
+        project1.add_extrusion("Ext1", ext1);
 
-    //     let local_filename = "two_squares.obj";
-    //     save_mesh_as_obj(ext1_mesh, local_filename);
-    //     // let _ = std::fs::remove_file(local_filename);
-    // }
+        let repr = project1.get_representation(100).unwrap();
+        let ext1_mesh_0 = repr.meshes["Ext1"][0].clone();
+
+        let local_filename = "anulus.obj";
+        save_mesh_as_obj(&ext1_mesh_0, local_filename);
+        // let _ = std::fs::remove_file(local_filename);
+    }
 }
