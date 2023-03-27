@@ -12,6 +12,15 @@ pub struct Point2D {
     pub y: f64,
 }
 
+impl Plane {
+    pub fn make_3d(&self, point: Point2D) -> Point3D {
+        let x = self.x_axis.scale(point.x);
+        let y = self.y_axis.scale(point.y);
+        let vertex = x.plus(y).plus(self.origin);
+        vertex
+    }
+}
+
 #[derive(Debug, Clone, Copy)]
 pub struct Point3D {
     pub x: f64,
@@ -21,13 +30,13 @@ pub struct Point3D {
 
 #[derive(Debug, Clone)]
 pub struct Ring {
-    // Ring represents a single closed loop
-    pub indices: Vec<usize>,
+    // Ring represents a single closed loop, made of edges
+    pub edges: Vec<Edge2D>,
 }
 
 impl Ring {
-    pub fn new(indices: Vec<usize>) -> Ring {
-        Ring { indices: indices }
+    pub fn new(edges: Vec<Edge2D>) -> Ring {
+        Ring { edges }
     }
 }
 
@@ -40,7 +49,7 @@ pub struct Polygon {
 
 impl Polygon {
     pub fn new(rings: Vec<Ring>) -> Polygon {
-        Polygon { rings: rings }
+        Polygon { rings }
     }
 }
 
@@ -80,11 +89,35 @@ pub struct Line2D {
 impl Line2D {
     pub fn new(start: Point2D, end: Point2D) -> Line2D {
         Line2D {
-            start: start,
-            end: end,
+            start,
+            end,
             construction: false,
         }
     }
+}
+
+#[derive(Debug, Clone, Copy)]
+pub struct CircleArc2D {
+    pub start: Point2D,
+    pub end: Point2D,
+    pub transit: Point2D,
+    pub construction: bool,
+}
+impl CircleArc2D {
+    pub fn new(start: Point2D, end: Point2D, transit: Point2D) -> CircleArc2D {
+        CircleArc2D {
+            start,
+            end,
+            transit,
+            construction: false,
+        }
+    }
+}
+
+#[derive(Debug, Clone, Copy)]
+pub enum Edge2D {
+    Line(Line2D),
+    CircleArc(CircleArc2D),
 }
 
 #[derive(Debug, Clone, Copy)]
@@ -158,7 +191,6 @@ pub struct ConcreteSketch {
     pub polygon_wires: Vec<Vec<Wire>>,
     pub faces: Vec<Face>,
     pub vertices: Vec<Point3D>,
-    truck_vertices: Vec<Vertex>,
 }
 
 impl ConcreteSketch {
@@ -170,7 +202,6 @@ impl ConcreteSketch {
             polygon_wires: vec![],
             faces: vec![],
             vertices: vec![],
-            truck_vertices: vec![],
         };
 
         let plane = p
@@ -195,7 +226,6 @@ impl ConcreteSketch {
             let y = y_axis.scale(v.y);
             let vertex = x.plus(y).plus(origin);
             cs.vertices.push(vertex);
-            cs.truck_vertices.push(vertex.to_vertex());
         }
 
         // TODO: should edges be represented as [start_vertex_index, end_vertex_index] instead of
@@ -249,15 +279,63 @@ impl ConcreteSketch {
             let mut polygon_wires = vec![];
             for ring in polygon.rings.iter() {
                 let mut wire2: Wire = vec![].into();
-                for (vertex_id_a, vertex_id_b) in
-                    ring.indices.iter().zip(ring.indices.iter().skip(1))
-                {
-                    let v0 = cs.truck_vertices.get(*vertex_id_a).expect("no such vertex");
-                    let v1 = cs.truck_vertices.get(*vertex_id_b).expect("no such vertex");
-                    let temp_line = builder::line(&v0, &v1);
-                    wire2.push_back(temp_line);
+                let mut edge_iterator = ring.edges.iter().peekable();
+                let mut wire_vertices: Vec<Vertex> = vec![];
+
+                while let Some(edge) = edge_iterator.next() {
+                    match edge {
+                        Edge2D::CircleArc(ca) => {
+                            if wire_vertices.len() == 0 {
+                                let new_start = plane.make_3d(ca.start).to_vertex();
+                                wire_vertices.push(new_start);
+                            }
+                            let start_3d = wire_vertices.last().unwrap();
+
+                            let end_3d = plane.make_3d(ca.end).to_vertex();
+                            let transit_3d = plane.make_3d(ca.transit);
+
+                            if edge_iterator.peek().is_none() {
+                                // If we are on the very last edge, so we need to close it up
+                                let first_vertex = wire_vertices.first().unwrap();
+                                let semi_circle = builder::circle_arc(
+                                    start_3d,
+                                    first_vertex,
+                                    transit_3d.to_point3(),
+                                );
+                                wire2.push_back(semi_circle);
+                            } else {
+                                let semi_circle =
+                                    builder::circle_arc(start_3d, &end_3d, transit_3d.to_point3());
+                                wire2.push_back(semi_circle);
+                            }
+                            wire_vertices.push(end_3d);
+                        }
+                        Edge2D::Line(l) => {
+                            if wire_vertices.len() == 0 {
+                                println!("starting new");
+                                let new_start = plane.make_3d(l.start).to_vertex();
+                                wire_vertices.push(new_start);
+                            }
+                            let start_3d = wire_vertices.last().unwrap();
+
+                            let end_3d = plane.make_3d(l.end).to_vertex();
+
+                            if edge_iterator.peek().is_none() {
+                                // If we are on the very last edge, so we need to close it up
+                                let first_vertex = wire_vertices.first().unwrap();
+                                let line = builder::line(start_3d, first_vertex);
+                                wire2.push_back(line);
+                            } else {
+                                let line = builder::line(start_3d, &end_3d);
+                                wire2.push_back(line);
+                            }
+                            wire_vertices.push(end_3d);
+                        }
+                    }
                 }
+
                 polygon_wires.push(wire2);
+                println!("Polygon wires length {:?}", polygon_wires.len());
             }
             cs.polygon_wires.push(polygon_wires);
         }
@@ -467,12 +545,6 @@ mod tests {
     use super::*;
 
     #[test]
-    fn it_works() {
-        let result = add(2, 2);
-        assert_eq!(result, 4);
-    }
-
-    #[test]
     fn triangular_prism() {
         let mut project1: Project = Project::new("First Project");
 
@@ -487,7 +559,7 @@ mod tests {
         let l2 = Line2D::new(b, c);
         let l3 = Line2D::new(c, a);
 
-        let r0 = Ring::new(vec![0, 1, 2, 0]);
+        let r0 = Ring::new(vec![Edge2D::Line(l1), Edge2D::Line(l2), Edge2D::Line(l3)]);
         let p0 = Polygon::new(vec![r0]);
 
         let s: Sketch = Sketch {
@@ -513,7 +585,7 @@ mod tests {
         let repr = project1.get_representation(100).unwrap();
         let ext1_mesh = &repr.meshes["Ext1"][0];
 
-        let local_filename = "triangular_prism.obj";
+        let local_filename = "test_triangular_prism.obj";
         save_mesh_as_obj(ext1_mesh, local_filename);
         // let _ = std::fs::remove_file(local_filename);
     }
@@ -535,7 +607,12 @@ mod tests {
         let l3 = Line2D::new(c, d);
         let l4 = Line2D::new(d, a);
 
-        let r0 = Ring::new(vec![0, 1, 2, 3, 0]);
+        let r0 = Ring::new(vec![
+            Edge2D::Line(l1),
+            Edge2D::Line(l2),
+            Edge2D::Line(l3),
+            Edge2D::Line(l4),
+        ]);
         let p0 = Polygon::new(vec![r0]);
 
         let s: Sketch = Sketch {
@@ -561,7 +638,7 @@ mod tests {
         let repr = project1.get_representation(100).unwrap();
         let ext1_mesh = &repr.meshes["Ext1"][0];
 
-        let local_filename = "rectangular_prism.obj";
+        let local_filename = "test_rectangular_prism.obj";
         save_mesh_as_obj(ext1_mesh, local_filename);
         // let _ = std::fs::remove_file(local_filename);
     }
@@ -586,7 +663,14 @@ mod tests {
         let l4 = Line2D::new(d, e);
         let l5 = Line2D::new(e, a);
 
-        let r0 = Ring::new(vec![0, 1, 2, 3, 4, 0]);
+        // let r0 = Ring::new(vec![0, 1, 2, 3, 4, 0]);
+        let r0 = Ring::new(vec![
+            Edge2D::Line(l1),
+            Edge2D::Line(l2),
+            Edge2D::Line(l3),
+            Edge2D::Line(l4),
+            Edge2D::Line(l5),
+        ]);
         let p0 = Polygon::new(vec![r0]);
 
         let s: Sketch = Sketch {
@@ -612,7 +696,7 @@ mod tests {
         let repr = project1.get_representation(100).unwrap();
         let ext1_mesh = &repr.meshes["Ext1"][0];
 
-        let local_filename = "pentagonal_prism.obj";
+        let local_filename = "test_pentagonal_prism.obj";
         save_mesh_as_obj(ext1_mesh, local_filename);
         // let _ = std::fs::remove_file(local_filename);
     }
@@ -639,10 +723,11 @@ mod tests {
         let l5 = Line2D::new(e, f);
         let l6 = Line2D::new(f, d);
 
-        let r0 = Ring::new(vec![0, 1, 2, 0]);
+        // let r0 = Ring::new(vec![0, 1, 2, 0]);
+        let r0 = Ring::new(vec![Edge2D::Line(l1), Edge2D::Line(l2), Edge2D::Line(l3)]);
         let p0 = Polygon::new(vec![r0]);
 
-        let r1 = Ring::new(vec![3, 4, 5, 3]);
+        let r1 = Ring::new(vec![Edge2D::Line(l4), Edge2D::Line(l5), Edge2D::Line(l6)]);
         let p1 = Polygon::new(vec![r1]);
 
         let s: Sketch = Sketch {
@@ -670,7 +755,7 @@ mod tests {
         let ext1_mesh_1 = repr.meshes["Ext1"][1].clone();
         ext1_mesh_0.merge(ext1_mesh_1);
 
-        let local_filename = "two_triangles.obj";
+        let local_filename = "test_two_triangles.obj";
         save_mesh_as_obj(&ext1_mesh_0, local_filename);
         // let _ = std::fs::remove_file(local_filename);
     }
@@ -684,13 +769,15 @@ mod tests {
         //
         //     d   e
         //  a            b
+        // counterclockwise!
         let a: Point2D = Point2D { x: 0.0, y: 0.0 };
         let b: Point2D = Point2D { x: 3.5, y: 0.0 };
         let c: Point2D = Point2D { x: 0.0, y: 3.5 };
 
+        // clockwise!
         let d: Point2D = Point2D { x: 1.0, y: 1.0 };
-        let e: Point2D = Point2D { x: 2.0, y: 1.0 };
-        let f: Point2D = Point2D { x: 1.0, y: 2.0 };
+        let e: Point2D = Point2D { x: 1.0, y: 2.0 };
+        let f: Point2D = Point2D { x: 2.0, y: 1.0 };
 
         let l1 = Line2D::new(a, b);
         let l2 = Line2D::new(b, c);
@@ -700,12 +787,12 @@ mod tests {
         let l5 = Line2D::new(e, f);
         let l6 = Line2D::new(f, d);
 
-        let r0 = Ring::new(vec![0, 1, 2, 0]);
-        let r1 = Ring::new(vec![3, 5, 4, 3]);
+        let r0 = Ring::new(vec![Edge2D::Line(l1), Edge2D::Line(l2), Edge2D::Line(l3)]);
+        let r1 = Ring::new(vec![Edge2D::Line(l4), Edge2D::Line(l5), Edge2D::Line(l6)]);
         let p0 = Polygon::new(vec![r0, r1]);
 
         let s: Sketch = Sketch {
-            plane_name: "Front".to_string(),
+            plane_name: "Top".to_string(),
             verticies: vec![a, b, c, d, e, f],
             lines: vec![l1, l2, l3, l4, l5, l6],
             faces: vec![p0],
@@ -727,8 +814,57 @@ mod tests {
         let repr = project1.get_representation(100).unwrap();
         let ext1_mesh_0 = repr.meshes["Ext1"][0].clone();
 
-        let local_filename = "anulus.obj";
+        let local_filename = "test_anulus.obj";
         save_mesh_as_obj(&ext1_mesh_0, local_filename);
         // let _ = std::fs::remove_file(local_filename);
+    }
+
+    #[test]
+    fn tombstone() {
+        let mut project1: Project = Project::new("Test Project");
+        let a: Point2D = Point2D { x: 1.0, y: 1.0 };
+        let b: Point2D = Point2D { x: -1.0, y: 1.0 };
+        let ab_above: Point2D = Point2D { x: 0.0, y: 2.0 };
+        let c: Point2D = Point2D { x: -1.0, y: 0.0 };
+        let d: Point2D = Point2D { x: 1.0, y: 0.0 };
+
+        let ca1 = CircleArc2D::new(a, b, ab_above);
+        let l1 = Line2D::new(b, c);
+        let l2 = Line2D::new(c, d);
+        let l3 = Line2D::new(d, a);
+
+        let r0 = Ring::new(vec![
+            Edge2D::CircleArc(ca1),
+            Edge2D::Line(l1),
+            Edge2D::Line(l2),
+            Edge2D::Line(l3),
+        ]);
+        let p0 = Polygon::new(vec![r0]);
+
+        let s: Sketch = Sketch {
+            plane_name: "Top".to_string(),
+            verticies: vec![a, b, c, d],
+            lines: vec![l1, l2, l3],
+            faces: vec![p0],
+        };
+        project1.add_sketch("Sketch1", s);
+
+        let ext1: Extrusion = Extrusion {
+            sketch_name: "Sketch1".to_string(),
+            faces: vec![0],
+            depth: 0.5,
+            operation: ExtrusionOperation::New,
+            direction: project1
+                .get_plane(&project1.get_sketch("Sketch1").unwrap().plane_name)
+                .unwrap()
+                .normal,
+        };
+        project1.add_extrusion("Ext1", ext1);
+
+        let repr = project1.get_representation(100).unwrap();
+        let ext1_mesh_0 = repr.meshes["Ext1"][0].clone();
+
+        let local_filename = "test_tombstone.obj";
+        save_mesh_as_obj(&ext1_mesh_0, local_filename);
     }
 }
