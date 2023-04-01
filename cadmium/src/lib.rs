@@ -183,6 +183,15 @@ pub struct Sketch {
     pub verticies: Vec<Point2D>,
 }
 
+impl Sketch {
+    pub fn find_faces(&self) {
+        /*
+          do a depth first seach. Start at some vertex, pick a line which connects
+          to it, then move to the other point the line touches, then
+        */
+    }
+}
+
 #[derive(Debug, Clone)]
 pub struct ConcreteSketch {
     pub plane_name: String,
@@ -522,7 +531,7 @@ impl Project {
             let mut meshes_for_this_solid_list: Vec<PolygonMesh> = vec![];
             for solid in solid_list.iter() {
                 // let polygon = solid;
-                let mut mesh = solid.triangulation(0.01).to_polygon();
+                let mut mesh = solid.triangulation(0.001).to_polygon();
                 mesh.put_together_same_attrs();
                 // assert!(mesh.shell_condition() == ShellCondition::Closed);
                 meshes_for_this_solid_list.push(mesh);
@@ -866,5 +875,35 @@ mod tests {
 
         let local_filename = "test_tombstone.obj";
         save_mesh_as_obj(&ext1_mesh_0, local_filename);
+    }
+
+    #[test]
+    fn find_faces_1() {
+        let a: Point2D = Point2D { x: 1.0, y: 1.0 };
+        let b: Point2D = Point2D { x: -1.0, y: 1.0 };
+        let ab_above: Point2D = Point2D { x: 0.0, y: 2.0 };
+        let c: Point2D = Point2D { x: -1.0, y: 0.0 };
+        let d: Point2D = Point2D { x: 1.0, y: 0.0 };
+
+        let ca1 = CircleArc2D::new(a, b, ab_above);
+        let l1 = Line2D::new(b, c);
+        let l2 = Line2D::new(c, d);
+        let l3 = Line2D::new(d, a);
+
+        let r0 = Ring::new(vec![
+            Edge2D::CircleArc(ca1),
+            Edge2D::Line(l1),
+            Edge2D::Line(l2),
+            Edge2D::Line(l3),
+        ]);
+        let p0 = Polygon::new(vec![r0]);
+
+        let s: Sketch = Sketch {
+            plane_name: "Top".to_string(),
+            verticies: vec![a, b, c, d],
+            lines: vec![l1, l2, l3],
+            faces: vec![],
+        };
+        s.find_faces();
     }
 }
