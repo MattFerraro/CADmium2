@@ -47,6 +47,7 @@ dependencies = [
 name = "cadmium"
 version = "0.1.0"
 dependencies = [
+ "num-complex",
  "truck-meshalgo",
  "truck-modeling",
 ]
