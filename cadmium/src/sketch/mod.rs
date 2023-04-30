@@ -264,7 +264,14 @@ impl Segment {
     }
 }
 
-type Ring<'a> = Vec<&'a mut Segment>;
+type Ring = Vec<Segment>;
+
+pub fn pretty_print_ring(ring: Ring) {
+    for segment in ring {
+        print!("{} --> {}, ", segment.get_start().id, segment.get_end().id);
+    }
+    println!();
+}
 
 #[derive(Debug, Clone)]
 pub struct Sketch {
@@ -276,39 +283,60 @@ impl Sketch {
         Sketch { segments }
     }
 
-    pub fn find_faces(&self) -> Vec<Vec<usize>> {
+    pub fn find_rings(&self, debug: bool) -> Vec<Ring> {
         let mut segments_overall: Vec<Segment> = self.segments.iter().map(|s| s.clone()).collect();
         let segments_reversed: Vec<Segment> = self.segments.iter().map(|s| s.reverse()).collect();
         segments_overall.extend(segments_reversed);
-        println!(
-            "Overall: {:?} segments including reversals",
-            segments_overall.len()
-        );
+
+        if debug {
+            println!(
+                "Overall: {:?} segments including reversals",
+                segments_overall.len()
+            );
+        }
 
         let mut used_indices: Vec<usize> = vec![];
         let mut new_rings: Vec<Vec<usize>> = vec![];
 
         for (seg_idx, s) in segments_overall.iter().enumerate() {
-            println!("Starting a loop with segment: {:?}", s);
+            if debug {
+                println!("Starting a loop with segment: {:?}", s);
+            }
+            if used_indices.contains(&seg_idx) {
+                if debug {
+                    println!("Skipping because it's been used");
+                }
+                continue;
+            }
             let mut new_ring_indices: Vec<usize> = vec![];
             let starting_point = s.get_start();
+            if debug {
+                println!("Starting point: {:?}", starting_point);
+            }
 
             let mut next_segment_index: usize = seg_idx;
             for i in 1..segments_overall.len() {
                 let next_segment = segments_overall.get(next_segment_index).unwrap();
-                println!("next segment: {:?}", next_segment);
+                if debug {
+                    println!("next segment: {:?}", next_segment);
+                }
                 new_ring_indices.push(next_segment_index);
 
-                match find_next_segment_index(&segments_overall, next_segment, &used_indices) {
+                match find_next_segment_index(&segments_overall, next_segment, &used_indices, debug)
+                {
                     None => {
-                        println!("\tno viable next segments!");
+                        if debug {
+                            println!("\tno viable next segments!");
+                        }
                         break;
                     }
                     Some(idx) => next_segment_index = idx,
                 }
                 if next_segment.get_end() == starting_point {
-                    println!("\tomg finished!");
-                    println!("\tring indices: {:?}", new_ring_indices);
+                    if debug {
+                        println!("\tomg finished!");
+                        println!("\tring indices: {:?}", new_ring_indices);
+                    }
                     new_rings.push(new_ring_indices.clone());
                     used_indices.extend(new_ring_indices);
                     break;
@@ -316,7 +344,17 @@ impl Sketch {
             }
         }
 
-        new_rings
+        let mut all_rings: Vec<Ring> = vec![];
+        for ring_indices in new_rings.iter() {
+            let mut this_ring: Ring = vec![];
+            for segment_index in ring_indices {
+                let actual_segment = segments_overall.get(*segment_index).unwrap();
+                this_ring.push(actual_segment.clone());
+            }
+            all_rings.push(this_ring);
+        }
+
+        all_rings
     }
 }
 
@@ -324,6 +362,7 @@ pub fn find_next_segment_index(
     segments: &Vec<Segment>,
     starting_segment: &Segment,
     used_indices: &Vec<usize>,
+    debug: bool,
 ) -> Option<usize> {
     let mut matches: Vec<usize> = vec![];
     for (idx, s2) in segments.iter().enumerate() {
@@ -335,10 +374,38 @@ pub fn find_next_segment_index(
         }
     }
 
-    if matches.len() == 1 {
+    if matches.len() == 0 {
+        None
+    } else if matches.len() == 1 {
         Some(matches[0])
     } else {
-        None
+        if debug {
+            println!("\tMultiple options! Deciding which one to take...");
+        }
+        let point_a = starting_segment.get_start();
+        let point_b = starting_segment.get_end();
+
+        let mut best_option: usize = 0;
+        let mut biggest_angle: f64 = 0.0;
+        for option in matches {
+            let point_c = segments[option].get_end();
+            let ang = angle(&point_a, &point_b, &point_c);
+            if debug {
+                println!(
+                    "\tAngle from {} to {} to {}: {}",
+                    point_a.id,
+                    point_b.id,
+                    point_c.id,
+                    ang * 180.0 / 3.1415926
+                );
+            }
+            if ang >= biggest_angle {
+                biggest_angle = ang;
+                best_option = option;
+            }
+        }
+
+        Some(best_option)
     }
 }
 
@@ -412,7 +479,12 @@ mod tests {
     }
 
     #[test]
-    fn simplest_triangle() {
+    fn simplest_triangle_rings() {
+        /*
+          C
+         / \
+        A---B
+         */
         let a = Point::new(-1.0, 0.0, "A");
         let b = Point::new(1.0, 0.0, "B");
         let c = Point::new(0.0, 1.0, "C");
@@ -426,6 +498,43 @@ mod tests {
         ];
         let sketch1 = Sketch::new(segments);
 
-        println!("{:?}", sketch1.find_faces());
+        let rings = sketch1.find_rings(false);
+        assert_eq!(rings.len(), 2);
+        assert_eq!(rings[0].len(), 3);
+        assert_eq!(rings[1].len(), 3);
+    }
+
+    #[test]
+    fn double_triangles_rings() {
+        /*
+          C
+         / \
+        A---B
+         \ /
+          D
+         */
+        let a = Point::new(-1.0, 0.0, "A");
+        let b = Point::new(1.0, 0.0, "B");
+        let c = Point::new(0.0, 1.0, "C");
+        let d = Point::new(0.0, -1.0, "D");
+        let line_ab = Line::new(a.clone(), b.clone());
+        let line_bc = Line::new(b.clone(), c.clone());
+        let line_ca = Line::new(c.clone(), a.clone());
+        let line_ad = Line::new(a.clone(), d.clone());
+        let line_bd = Line::new(b.clone(), d.clone());
+        let segments = vec![
+            Segment::Line(line_ab),
+            Segment::Line(line_bc),
+            Segment::Line(line_ca),
+            Segment::Line(line_ad),
+            Segment::Line(line_bd),
+        ];
+        let sketch1 = Sketch::new(segments);
+
+        let rings = sketch1.find_rings(false);
+        assert_eq!(rings.len(), 3);
+        for ring in rings {
+            pretty_print_ring(ring);
+        }
     }
 }
