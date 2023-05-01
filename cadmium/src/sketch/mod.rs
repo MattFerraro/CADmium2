@@ -266,10 +266,20 @@ impl Segment {
 
 type Ring = Vec<Segment>;
 
-pub fn pretty_print_ring(ring: Ring) {
+pub fn signed_area(ring: &Ring) -> f64 {
+    let mut area: f64 = 0.0;
+    for segment in ring {
+        area += (segment.get_end().x - segment.get_start().x)
+            * (segment.get_end().y + segment.get_start().y);
+    }
+    return area / -2.0;
+}
+
+pub fn pretty_print(ring: &Ring) {
     for segment in ring {
         print!("{} --> {}, ", segment.get_start().id, segment.get_end().id);
     }
+    print!("Area: {}", signed_area(ring));
     println!();
 }
 
@@ -534,7 +544,7 @@ mod tests {
         let rings = sketch1.find_rings(false);
         assert_eq!(rings.len(), 3);
         for ring in rings {
-            pretty_print_ring(ring);
+            pretty_print(&ring);
         }
     }
 }
