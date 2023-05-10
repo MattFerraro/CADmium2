@@ -1,6 +1,13 @@
 #![allow(dead_code)]
 #![allow(unused_variables)]
+#![allow(unused_imports)]
 
+use geo::polygon;
+use geo::Area;
+// use geo::ConvexHull;
+use geo::Contains;
+use geo::LineString;
+use geo::Polygon;
 use num_complex::Complex;
 use std::{f64::consts::PI, f64::consts::TAU, fmt};
 
@@ -266,6 +273,17 @@ impl Segment {
 
 type Ring = Vec<Segment>;
 
+pub fn as_polygon(ring: &Ring) -> Polygon {
+    let mut b: Vec<(f64, f64)> = vec![];
+    for segment in ring.iter() {
+        let start = segment.get_start();
+        let start_tuple = (start.x, start.y);
+        b.push(start_tuple);
+    }
+    let polygon = Polygon::new(LineString::from(b), vec![]);
+    polygon
+}
+
 pub fn signed_area(ring: &Ring) -> f64 {
     let mut area: f64 = 0.0;
     for segment in ring {
@@ -283,6 +301,11 @@ pub fn pretty_print(ring: &Ring) {
     println!();
 }
 
+pub struct Face {
+    pub exterior: Ring,
+    pub interiors: Vec<Ring>,
+}
+
 #[derive(Debug, Clone)]
 pub struct Sketch {
     pub segments: Vec<Segment>,
@@ -291,6 +314,50 @@ pub struct Sketch {
 impl Sketch {
     pub fn new(segments: Vec<Segment>) -> Sketch {
         Sketch { segments }
+    }
+
+    pub fn find_faces(&self, debug: bool) -> Vec<Polygon> {
+        let rings = self.find_rings(debug);
+
+        let mut polygons: Vec<Polygon> = rings
+            .iter()
+            .map(|r| as_polygon(r))
+            .filter(|p| p.signed_area() > 0.0)
+            .collect();
+
+        // they are already sorted from smallest to largest area
+        let mut what_contains_what: Vec<(usize, usize)> = vec![];
+        for smaller_polygon_index in 0..polygons.len() - 1 {
+            let smaller_polygon = &polygons[smaller_polygon_index];
+            println!("Smaller poly area: {:?}", smaller_polygon.signed_area());
+
+            for bigger_polygon_index in smaller_polygon_index + 1..polygons.len() {
+                let bigger_polygon = &polygons[bigger_polygon_index];
+                let inside = bigger_polygon.contains(smaller_polygon);
+                println!(
+                    "Bigger poly area: {} contains? {}",
+                    bigger_polygon.signed_area(),
+                    inside
+                );
+
+                if inside {
+                    what_contains_what.push((bigger_polygon_index, smaller_polygon_index));
+                    break;
+                }
+            }
+        }
+
+        for (bigger_index, smaller_index) in what_contains_what {
+            let smaller = &polygons[smaller_index];
+            let new_interior_coords: Vec<&geo::Coord> = smaller.exterior().coords().collect();
+            let new_interior: Vec<(f64, f64)> =
+                new_interior_coords.iter().map(|c| (c.x, c.y)).collect();
+
+            let bigger = &mut polygons[bigger_index];
+            bigger.interiors_push(new_interior);
+        }
+
+        polygons
     }
 
     pub fn find_rings(&self, debug: bool) -> Vec<Ring> {
@@ -363,6 +430,8 @@ impl Sketch {
             }
             all_rings.push(this_ring);
         }
+
+        all_rings.sort_by(|r1, r2| signed_area(r1).partial_cmp(&signed_area(r2)).unwrap());
 
         all_rings
     }
@@ -543,8 +612,137 @@ mod tests {
 
         let rings = sketch1.find_rings(false);
         assert_eq!(rings.len(), 3);
-        for ring in rings {
+        println!("\nAbout to find faces for triangles");
+        let faces = sketch1.find_faces(false);
+
+        for f in faces {
+            println!("Found Face: {:?}", f);
+        }
+    }
+
+    #[test]
+    fn nested_squares() {
+        /*
+        H-----------G
+        |           |
+        |   D---C   |
+        |   |   |   |
+        |   A---B   |
+        |           |
+        E-----------F
+         */
+        let a = Point::new(0.0, 0.0, "A");
+        let b = Point::new(1.0, 0.0, "B");
+        let c = Point::new(1.0, 1.0, "C");
+        let d = Point::new(0.0, 1.0, "D");
+        let line_ab = Line::new(a.clone(), b.clone());
+        let line_bc = Line::new(b.clone(), c.clone());
+        let line_cd = Line::new(c.clone(), d.clone());
+        let line_da = Line::new(d.clone(), a.clone());
+
+        let e = Point::new(-1.0, -1.0, "E");
+        let f = Point::new(2.0, -1.0, "F");
+        let g = Point::new(2.0, 2.0, "G");
+        let h = Point::new(-1.0, 2.0, "H");
+        let line_ef = Line::new(e.clone(), f.clone());
+        let line_fg = Line::new(f.clone(), g.clone());
+        let line_gh = Line::new(g.clone(), h.clone());
+        let line_he = Line::new(h.clone(), e.clone());
+        let segments = vec![
+            Segment::Line(line_ab),
+            Segment::Line(line_bc),
+            Segment::Line(line_cd),
+            Segment::Line(line_da),
+            Segment::Line(line_ef),
+            Segment::Line(line_fg),
+            Segment::Line(line_gh),
+            Segment::Line(line_he),
+        ];
+        let sketch1 = Sketch::new(segments);
+
+        let rings = sketch1.find_rings(false);
+        for ring in rings.iter() {
             pretty_print(&ring);
+        }
+        assert_eq!(rings.len(), 4);
+
+        println!("\nAbout to find faces for squares");
+        let faces = sketch1.find_faces(false);
+
+        for f in faces {
+            println!("Found Face: {:?}", f);
+        }
+    }
+
+    #[test]
+    fn double_nested_squares() {
+        /*
+        L-------------------K
+        |                   |
+        |   H-----------G   |
+        |   |           |   |
+        |   |   D---C   |   |
+        |   |   |   |   |   |
+        |   |   A---B   |   |
+        |   |           |   |
+        |   E-----------F   |
+        |                   |
+        I-------------------J
+         */
+        let a = Point::new(0.0, 0.0, "A");
+        let b = Point::new(1.0, 0.0, "B");
+        let c = Point::new(1.0, 1.0, "C");
+        let d = Point::new(0.0, 1.0, "D");
+        let line_ab = Line::new(a.clone(), b.clone());
+        let line_bc = Line::new(b.clone(), c.clone());
+        let line_cd = Line::new(c.clone(), d.clone());
+        let line_da = Line::new(d.clone(), a.clone());
+
+        let e = Point::new(-1.0, -1.0, "E");
+        let f = Point::new(2.0, -1.0, "F");
+        let g = Point::new(2.0, 2.0, "G");
+        let h = Point::new(-1.0, 2.0, "H");
+        let line_ef = Line::new(e.clone(), f.clone());
+        let line_fg = Line::new(f.clone(), g.clone());
+        let line_gh = Line::new(g.clone(), h.clone());
+        let line_he = Line::new(h.clone(), e.clone());
+
+        let i = Point::new(-2.0, -2.0, "I");
+        let j = Point::new(3.0, -2.0, "J");
+        let k = Point::new(3.0, 3.0, "K");
+        let l = Point::new(-2.0, 3.0, "L");
+        let line_ij = Line::new(i.clone(), j.clone());
+        let line_jk = Line::new(j.clone(), k.clone());
+        let line_kl = Line::new(k.clone(), l.clone());
+        let line_li = Line::new(l.clone(), i.clone());
+
+        let segments = vec![
+            Segment::Line(line_ab),
+            Segment::Line(line_bc),
+            Segment::Line(line_cd),
+            Segment::Line(line_da),
+            Segment::Line(line_ef),
+            Segment::Line(line_fg),
+            Segment::Line(line_gh),
+            Segment::Line(line_he),
+            Segment::Line(line_ij),
+            Segment::Line(line_jk),
+            Segment::Line(line_kl),
+            Segment::Line(line_li),
+        ];
+        let sketch1 = Sketch::new(segments);
+
+        let rings = sketch1.find_rings(false);
+        for ring in rings.iter() {
+            pretty_print(&ring);
+        }
+        assert_eq!(rings.len(), 6);
+
+        println!("\nAbout to find faces for DOUBLE squares");
+        let faces = sketch1.find_faces(false);
+
+        for f in faces {
+            println!("Found Face: {:?}", f);
         }
     }
 }
