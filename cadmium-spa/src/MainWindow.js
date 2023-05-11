@@ -1,7 +1,10 @@
 import './App.css'
 import React, { useRef, useState } from 'react'
-import { AppShell, Navbar, Header } from '@mantine/core'
+import { AppShell, Navbar, Header, Button } from '@mantine/core'
 import MainViewport from './MainViewport'
+import extrude_min from './extrude_min.svg';
+import sketch_min from './sketch_min.svg';
+
 
 function MainWindow() {
   return (
@@ -9,12 +12,21 @@ function MainWindow() {
       padding="md"
       navbar={
         <Navbar width={{ base: 300 }} height={540} p="xs">
-          {/* Navbar content */}
+          <div>
+            History
+          </div>
+          <div>Solids</div>
+
         </Navbar>
       }
       header={
         <Header height={60} p="xs">
-          {/* Header content */}
+          <div>
+            Actions:
+            <Button variant='light' size='md'><img width={45} src={sketch_min}></img> New Sketch</Button>
+            <Button variant='default' size='md'><img width={45} src={extrude_min}></img></Button>
+
+          </div>
         </Header>
       }
       styles={(theme) => ({
