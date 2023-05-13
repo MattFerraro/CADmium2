@@ -1,0 +1,23 @@
+[package]
+name = "cadmium-js"
+version = "0.1.0"
+authors = ["Matt Ferraro <mattferraro.dev@gmail.com>"]
+description = "Bindings from cadmium to javascript"
+license = "MIT"
+repository = "https://github.com/mattferraro/cadmium2"
+# edition = "2018"
+edition = "2021"
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[lib]
+crate-type = ["cdylib"]
+
+[dependencies]
+wasm-bindgen = "0.2"
+
+
+[dependencies.web-sys]
+version = "0.3"
+features = [
+  "console",
+]

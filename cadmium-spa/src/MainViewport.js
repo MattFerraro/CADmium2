@@ -3,7 +3,11 @@ import React, { useCallback, useEffect, useRef, useState } from 'react'
 import { Canvas, useFrame } from '@react-three/fiber'
 import { CameraControls } from '@react-three/drei'
 import * as THREE from 'three'
-import init, * as Truck from 'truck-js'
+// import init, * as Truck from 'truck-js'
+// import { initSync } from 'cadmium-js'
+import { default as init, greet } from "cadmium-js";
+// const CAD = import('cadmium-js');
+
 import { useThree } from '@react-three/fiber'
 
 function MainViewport() {
@@ -36,95 +40,114 @@ function MainViewport() {
   )
 }
 
+
+
 function TruckHandler(props) {
   const state = useThree()
   useEffect(() => {
+    console.log("Hello!");
+
+    console.log(init)
     init().then(() => {
-      const scene = state.scene
+      greet("matt");
+    });
 
-      const v = Truck.vertex(-0.5, -0.5, -0.5)
-      const e = Truck.tsweep(v.upcast(), [1.0, 0.0, 0.0])
-      const f = Truck.tsweep(e, [0.0, 1.0, 0.0])
-      const abst = Truck.tsweep(f, [0.0, 0.0, 1.0])
-      const solid = abst.into_solid()
+    // initSync().then(() => {
+    //   console.log("loaded?");
+    // })
+    // console.log(CAD.greet("hi"));
+    // CAD.initSync();
+    // CAD.init();
+    // init().then(() => {
+    //   console.log("initialized!");
+    // })
 
-      const v2 = Truck.vertex(-0.25, -0.25, -0.75)
-      const e2 = Truck.tsweep(v2.upcast(), [.5, 0.0, 0.0])
-      const f2 = Truck.tsweep(e2, [0.0, .5, 0.0])
-      const abst2 = Truck.tsweep(f2, [0.0, 0.0, 1.5])
-      const solid2 = abst2.into_solid()
+    // init().then(() => {
+    //   const scene = state.scene
 
-      const solid3 = Truck.and(solid, Truck.not(solid2))
+    //   const v = Truck.vertex(-0.5, -0.5, -0.5)
+    //   const e = Truck.tsweep(v.upcast(), [1.0, 0.0, 0.0])
+    //   const f = Truck.tsweep(e, [0.0, 1.0, 0.0])
+    //   const abst = Truck.tsweep(f, [0.0, 0.0, 1.0])
+    //   const solid = abst.into_solid()
 
-      let polygon = solid3.to_polygon(0.01)
-      const object = polygon.to_buffer()
-      let vBuffer = Array.from(object.vertex_buffer())
-      // vBuffer looks like:
-      // [x, y, z, u, v, nx, ny, nz]
-      let vertices = []
-      let uvs = []
-      let normals = []
-      for (let idx = 0; idx < vBuffer.length; idx++) {
-        const mod = idx % 8
-        const val = vBuffer[idx]
-        if (mod === 0 || (mod === 1) | (mod === 2)) {
-          vertices.push(val)
-        } else if (mod === 3 || mod === 4) {
-          uvs.push(val)
-        } else {
-          normals.push(val)
-        }
-      }
-      // console.log('vertices', vertices)
+    //   const v2 = Truck.vertex(-0.25, -0.25, -0.75)
+    //   const e2 = Truck.tsweep(v2.upcast(), [.5, 0.0, 0.0])
+    //   const f2 = Truck.tsweep(e2, [0.0, .5, 0.0])
+    //   const abst2 = Truck.tsweep(f2, [0.0, 0.0, 1.5])
+    //   const solid2 = abst2.into_solid()
 
-      let iBuffer = object.index_buffer()
-      iBuffer = Array.from(iBuffer)
-      let indexLength = object.index_buffer_size() / 4
+    //   const solid3 = Truck.and(solid, Truck.not(solid2))
 
-      const geometry = new THREE.BufferGeometry()
+    //   let polygon = solid3.to_polygon(0.01)
+    //   const object = polygon.to_buffer()
+    //   let vBuffer = Array.from(object.vertex_buffer())
+    //   // vBuffer looks like:
+    //   // [x, y, z, u, v, nx, ny, nz]
+    //   let vertices = []
+    //   let uvs = []
+    //   let normals = []
+    //   for (let idx = 0; idx < vBuffer.length; idx++) {
+    //     const mod = idx % 8
+    //     const val = vBuffer[idx]
+    //     if (mod === 0 || (mod === 1) | (mod === 2)) {
+    //       vertices.push(val)
+    //     } else if (mod === 3 || mod === 4) {
+    //       uvs.push(val)
+    //     } else {
+    //       normals.push(val)
+    //     }
+    //   }
+    //   // console.log('vertices', vertices)
 
-      // console.log('vBuffer', vBuffer)
-      // console.log('iBuffer', iBuffer)
-      // console.log('length', indexLength)
+    //   let iBuffer = object.index_buffer()
+    //   iBuffer = Array.from(iBuffer)
+    //   let indexLength = object.index_buffer_size() / 4
 
-      geometry.setAttribute(
-        'position',
-        new THREE.Float32BufferAttribute(vertices, 3)
-      )
-      geometry.setAttribute(
-        'normal',
-        new THREE.Float32BufferAttribute(normals, 3)
-      )
-      geometry.setAttribute(
-        'uv',
-        new THREE.Float32BufferAttribute(uvs, 3)
-      )
-      geometry.setIndex(iBuffer)
+    //   const geometry = new THREE.BufferGeometry()
 
-      const material = new THREE.MeshNormalMaterial({
-        color: 0xff0000,
-        side: THREE.DoubleSide,
-      })
-      const mesh = new THREE.Mesh(geometry, material)
-      scene.add(mesh)
+    //   // console.log('vBuffer', vBuffer)
+    //   // console.log('iBuffer', iBuffer)
+    //   // console.log('length', indexLength)
 
-      // geometry.setAttribute('normal', new THREE.Float32BufferAttribute(normals, 3));
-      // geometry.setAttribute('color', new THREE.Float32BufferAttribute(colors, 3));
+    //   geometry.setAttribute(
+    //     'position',
+    //     new THREE.Float32BufferAttribute(vertices, 3)
+    //   )
+    //   geometry.setAttribute(
+    //     'normal',
+    //     new THREE.Float32BufferAttribute(normals, 3)
+    //   )
+    //   geometry.setAttribute(
+    //     'uv',
+    //     new THREE.Float32BufferAttribute(uvs, 3)
+    //   )
+    //   geometry.setIndex(iBuffer)
 
-      // greet("WebAssembly")
-      //   const matt = demo();
-      //   const jsony = JSON.parse(new TextDecoder().decode(matt))
-      //    console.log("um, hi", jsony);
-      // const vAttributes = createVbo(gl, vBuffer);
-      // gl.bindBuffer(gl.ARRAY_BUFFER, vAttributes);
+    //   const material = new THREE.MeshNormalMaterial({
+    //     color: 0xff0000,
+    //     side: THREE.DoubleSide,
+    //   })
+    //   const mesh = new THREE.Mesh(geometry, material)
+    //   scene.add(mesh)
 
-      // const vPositionLocation = gl.getAttribLocation(prg, "position");
-      // const vUVLocation = gl.getAttribLocation(prg, "uv");
-      // const vNormalLocation = gl.getAttribLocation(prg, "normal");
+    //   // geometry.setAttribute('normal', new THREE.Float32BufferAttribute(normals, 3));
+    //   // geometry.setAttribute('color', new THREE.Float32BufferAttribute(colors, 3));
 
-      // const vIndex = createIbo(ctx, iBuffer);
-      // console.log(vIndex)
-    })
+    //   // greet("WebAssembly")
+    //   //   const matt = demo();
+    //   //   const jsony = JSON.parse(new TextDecoder().decode(matt))
+    //   //    console.log("um, hi", jsony);
+    //   // const vAttributes = createVbo(gl, vBuffer);
+    //   // gl.bindBuffer(gl.ARRAY_BUFFER, vAttributes);
+
+    //   // const vPositionLocation = gl.getAttribLocation(prg, "position");
+    //   // const vUVLocation = gl.getAttribLocation(prg, "uv");
+    //   // const vNormalLocation = gl.getAttribLocation(prg, "normal");
+
+    //   // const vIndex = createIbo(ctx, iBuffer);
+    //   // console.log(vIndex)
+    // })
   }, [])
   return <></>
 }

@@ -4,8 +4,9 @@ import { AppShell, Navbar, Header } from '@mantine/core'
 import { MantineProvider, ColorSchemeProvider } from '@mantine/core'
 import { useHotkeys, useLocalStorage } from '@mantine/hooks'
 import MainWindow from './MainWindow'
+// import init, * as Cad from 'cadmium-js'
 
-// import init, { greet, demo } from "hello-wasm";
+// import init { greet, demo } from "cadmium-js";
 // import init, * as Truck from "./truck_js.js";
 // import init, * as Truck from "truck-js";
 
