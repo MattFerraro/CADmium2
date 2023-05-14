@@ -1,6 +1,6 @@
 {
     "rust-analyzer.linkedProjects": [
         "./cadmium-js/Cargo.toml",
-        "./cadmium-js/Cargo.toml"
+        "./cadmium/Cargo.toml"
     ]
 }

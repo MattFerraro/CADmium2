@@ -14,6 +14,7 @@ crate-type = ["cdylib"]
 
 [dependencies]
 wasm-bindgen = "0.2"
+cadmium = { path = "../cadmium" }
 
 
 [dependencies.web-sys]

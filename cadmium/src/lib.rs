@@ -2,6 +2,11 @@ use std::collections::HashMap;
 use truck_meshalgo::prelude::*;
 use truck_modeling::*;
 
+pub mod assembly;
+pub mod common;
+pub mod project;
+pub mod workbench;
+
 pub fn add(left: usize, right: usize) -> usize {
     left + right
 }

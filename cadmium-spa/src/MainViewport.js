@@ -5,7 +5,7 @@ import { CameraControls } from '@react-three/drei'
 import * as THREE from 'three'
 // import init, * as Truck from 'truck-js'
 // import { initSync } from 'cadmium-js'
-import { default as init, greet } from "cadmium-js";
+import { default as init, greet, new_part_studio } from "cadmium-js";
 // const CAD = import('cadmium-js');
 
 import { useThree } from '@react-three/fiber'
@@ -50,6 +50,7 @@ function TruckHandler(props) {
     console.log(init)
     init().then(() => {
       greet("matt");
+      new_part_studio();
     });
 
     // initSync().then(() => {

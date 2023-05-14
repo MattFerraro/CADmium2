@@ -18,3 +18,9 @@ pub fn greet(name: &str) {
     // alert(&format!("Hello, {}!", name));
     log!("Hello from {}", name)
 }
+
+#[wasm_bindgen]
+pub fn new_part_studio() {
+    let proj = cadmium::project::Project::new("matt");
+    log!("Project: {:?}", proj);
+}

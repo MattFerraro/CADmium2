@@ -4,7 +4,6 @@
 
 use geo::polygon;
 use geo::Area;
-// use geo::ConvexHull;
 use geo::Contains;
 use geo::LineString;
 use geo::Polygon;
