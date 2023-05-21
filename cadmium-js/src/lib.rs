@@ -23,4 +23,5 @@ pub fn greet(name: &str) {
 pub fn new_part_studio() {
     let proj = cadmium::project::Project::new("matt");
     log!("Project: {:?}", proj);
+    log!("WB View: {:?}", proj.workbenches[0].create_view(100));
 }

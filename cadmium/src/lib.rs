@@ -1,3 +1,5 @@
+#![allow(unused_variables)]
+
 use std::collections::HashMap;
 use truck_meshalgo::prelude::*;
 use truck_modeling::*;
@@ -5,6 +7,7 @@ use truck_modeling::*;
 pub mod assembly;
 pub mod common;
 pub mod project;
+pub mod sketch;
 pub mod workbench;
 
 pub fn add(left: usize, right: usize) -> usize {

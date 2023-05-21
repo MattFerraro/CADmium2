@@ -2,6 +2,7 @@
 #![allow(unused_variables)]
 #![allow(unused_imports)]
 
+use crate::common::{CoordinateFrame, LineFace, LineRing, LineSegment};
 use geo::polygon;
 use geo::Area;
 use geo::Contains;
@@ -311,8 +312,12 @@ pub struct Sketch {
 }
 
 impl Sketch {
-    pub fn new(segments: Vec<Segment>) -> Sketch {
-        Sketch { segments }
+    pub fn new() -> Sketch {
+        Sketch { segments: vec![] }
+    }
+
+    pub fn add_segments(&mut self, segments: Vec<Segment>) {
+        self.segments.extend(segments);
     }
 
     pub fn find_faces(&self, debug: bool) -> Vec<Polygon> {
@@ -434,6 +439,82 @@ impl Sketch {
 
         all_rings
     }
+
+    pub fn create_view(&self, frame: &CoordinateFrame) -> SketchView {
+        let mut sv = SketchView {
+            segments: vec![],
+            faces: vec![],
+        };
+
+        for segment in self.segments.iter() {
+            let start = segment.get_start();
+            let end = segment.get_end();
+            let start_3d = frame.to_3d(start);
+            let end_3d = frame.to_3d(end);
+            let line_segment = LineSegment {
+                start: start_3d,
+                end: end_3d,
+            };
+            sv.segments.push(line_segment);
+        }
+
+        let faces = self.find_faces(false);
+        for face in faces.iter() {
+            let mut exterior: LineRing = LineRing::new();
+            let mut interiors: Vec<LineRing> = vec![];
+            let exterior_coords: Vec<&geo::Coord> = face.exterior().coords().collect();
+            let exterior_points: Vec<Point> = exterior_coords
+                .iter()
+                .map(|c| Point::new(c.x, c.y, "exterior"))
+                .collect();
+            for i in 0..exterior_points.len() - 1 {
+                let start = exterior_points[i].clone();
+                let end = exterior_points[i + 1].clone();
+                let start_3d = frame.to_3d(start);
+                let end_3d = frame.to_3d(end);
+                let line_segment = LineSegment {
+                    start: start_3d,
+                    end: end_3d,
+                };
+                exterior.add_segment(line_segment);
+            }
+
+            sv.faces.push(LineFace {
+                exterior: exterior,
+                interiors: vec![],
+            });
+
+            for interior in face.interiors() {
+                let interior_coords: Vec<&geo::Coord> = interior.coords().collect();
+                let interior_points: Vec<Point> = interior_coords
+                    .iter()
+                    .map(|c| Point::new(c.x, c.y, "interior"))
+                    .collect();
+                let mut interior_ring: LineRing = LineRing::new();
+                for i in 0..interior_points.len() - 1 {
+                    let start = interior_points[i].clone();
+                    let end = interior_points[i + 1].clone();
+                    let start_3d = frame.to_3d(start);
+                    let end_3d = frame.to_3d(end);
+                    let line_segment = LineSegment {
+                        start: start_3d,
+                        end: end_3d,
+                    };
+                    interior_ring.add_segment(line_segment);
+                }
+                interiors.push(interior_ring);
+            }
+            sv.faces.last_mut().unwrap().interiors = interiors;
+        }
+
+        sv
+    }
+}
+
+#[derive(Debug, Clone)]
+pub struct SketchView {
+    pub segments: Vec<LineSegment>,
+    pub faces: Vec<LineFace>,
 }
 
 pub fn find_next_segment_index(
@@ -574,7 +655,8 @@ mod tests {
             Segment::Line(line_bc),
             Segment::Line(line_ca),
         ];
-        let sketch1 = Sketch::new(segments);
+        let mut sketch1 = Sketch::new();
+        sketch1.add_segments(segments);
 
         let rings = sketch1.find_rings(false);
         assert_eq!(rings.len(), 2);
@@ -607,7 +689,8 @@ mod tests {
             Segment::Line(line_ad),
             Segment::Line(line_bd),
         ];
-        let sketch1 = Sketch::new(segments);
+        let mut sketch1 = Sketch::new();
+        sketch1.add_segments(segments);
 
         let rings = sketch1.find_rings(false);
         assert_eq!(rings.len(), 3);
@@ -657,7 +740,8 @@ mod tests {
             Segment::Line(line_gh),
             Segment::Line(line_he),
         ];
-        let sketch1 = Sketch::new(segments);
+        let mut sketch1 = Sketch::new();
+        sketch1.add_segments(segments);
 
         let rings = sketch1.find_rings(false);
         for ring in rings.iter() {
@@ -729,7 +813,8 @@ mod tests {
             Segment::Line(line_kl),
             Segment::Line(line_li),
         ];
-        let sketch1 = Sketch::new(segments);
+        let mut sketch1 = Sketch::new();
+        sketch1.add_segments(segments);
 
         let rings = sketch1.find_rings(false);
         for ring in rings.iter() {
