@@ -63,6 +63,82 @@ impl Workbench {
         });
     }
 
+    pub fn find_plane(&self, name: &str) -> Option<&Plane> {
+        for step in self.steps.iter() {
+            match step {
+                Step::Plane { name: n, plane } => {
+                    if n == name {
+                        return Some(plane);
+                    }
+                }
+                _ => {}
+            }
+        }
+        None
+    }
+
+    pub fn find_sketch(&self, name: &str) -> Option<&Sketch> {
+        for step in self.steps.iter() {
+            match step {
+                Step::Sketch {
+                    name: n,
+                    sketch,
+                    plane,
+                } => {
+                    if n == name {
+                        // let plane = self.find_plane(plane).unwrap();
+                        return Some(sketch);
+                    }
+                }
+                _ => {}
+            }
+        }
+        None
+    }
+
+    pub fn find_sketch_plane(&self, name: &str) -> Option<&Plane> {
+        for step in self.steps.iter() {
+            match step {
+                Step::Sketch {
+                    name: n,
+                    sketch,
+                    plane,
+                } => {
+                    if n == name {
+                        let plane = self.find_plane(plane).unwrap();
+                        return Some(plane);
+                    }
+                }
+                _ => {}
+            }
+        }
+        None
+    }
+
+    pub fn add_extrusion(
+        &mut self,
+        name: &str,
+        sketch: &str,
+        depth: f64,
+        faces: Vec<usize>,
+        operation: Operation,
+    ) {
+        // we need the normal!
+        let plane = self.find_sketch_plane(sketch).unwrap();
+        let normal = plane.normal;
+
+        self.steps.push(Step::Extrusion {
+            name: name.to_owned(),
+            extrusion: Extrusion {
+                depth: depth,
+                direction: normal,
+                operation: operation,
+            },
+            sketch: sketch.to_owned(),
+            faces: faces,
+        });
+    }
+
     pub fn create_view(&self, max_steps: usize) -> WorkbenchView {
         let mut wbv = WorkbenchView::new();
         for step in self.steps.iter().take(max_steps) {
@@ -78,11 +154,19 @@ impl Workbench {
                     name,
                     plane,
                 } => {
-                    // wbv.sketches.insert(name.to_owned(), s.clone());
                     let actual_plane = wbv.find_plane(plane).unwrap();
                     let transform = actual_plane.to_frame();
                     let sketchview = sketch.create_view(&transform);
                     wbv.sketches.insert(name.to_owned(), sketchview);
+                }
+                Step::Extrusion {
+                    name,
+                    extrusion,
+                    sketch,
+                    faces,
+                } => {
+                    // TODO: Add meshes to the workbench view struct, and start
+                    // using Truck to create them! Pull code from lib.rs as appropriate
                 }
             }
         }
@@ -106,7 +190,35 @@ pub enum Step {
         sketch: Sketch,
         plane: String,
     },
-    // Extrusion { name: String, extrusion: Extrusion },
+    Extrusion {
+        name: String,
+        extrusion: Extrusion,
+        sketch: String,
+        faces: Vec<usize>,
+    },
+}
+
+#[derive(Debug)]
+pub enum Operation {
+    New,
+    Add,
+    Remove,
+}
+
+#[derive(Debug)]
+pub struct Extrusion {
+    pub depth: f64,
+    pub direction: Vector,
+    pub operation: Operation,
+}
+impl Extrusion {
+    pub fn new(depth: f64, direction: Vector, operation: Operation) -> Extrusion {
+        Extrusion {
+            depth: depth,
+            direction: direction,
+            operation: operation,
+        }
+    }
 }
 
 #[derive(Debug)]
@@ -151,8 +263,9 @@ mod tests {
         ];
         let mut sketch1 = Sketch::new();
         sketch1.add_segments(segments);
+        wb.add_sketch("sketch1", sketch1, "Top");
 
-        wb.add_sketch("sketch1", sketch1, "Front");
+        wb.add_extrusion("ext1", "sketch1", 10.0, vec![0], Operation::New);
 
         let wbv = wb.create_view(100);
         println!("WB View sketches: {:?}", wbv.sketches);
