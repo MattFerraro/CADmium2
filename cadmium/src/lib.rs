@@ -534,7 +534,6 @@ impl Project {
         }
 
         // TODO: handle other kinds of extrusions where solids might disappear or merge or split
-
         for (name, solid_list) in repr.solids.iter() {
             let mut meshes_for_this_solid_list: Vec<PolygonMesh> = vec![];
             for solid in solid_list.iter() {

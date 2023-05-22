@@ -2,15 +2,9 @@
 #![allow(unused_variables)]
 #![allow(unused_imports)]
 
-use crate::common::Plane;
-use crate::common::Point;
-use crate::common::Vector;
-use crate::sketch::Line;
+use crate::common::{Plane, Point, Solid, Vector};
 use crate::sketch::Point as Point2D;
-use crate::sketch::Segment;
-
-use crate::sketch::Sketch;
-use crate::sketch::SketchView;
+use crate::sketch::{Line, Segment, Sketch, SketchView};
 use std::collections::HashMap;
 
 #[derive(Debug)]
@@ -165,8 +159,13 @@ impl Workbench {
                     sketch,
                     faces,
                 } => {
-                    // TODO: Add meshes to the workbench view struct, and start
-                    // using Truck to create them! Pull code from lib.rs as appropriate
+                    let sketchview = wbv.sketches.get(sketch).unwrap();
+
+                    for face_index in faces.iter() {
+                        let face = &sketchview.faces[*face_index];
+                        let res = face.tsweep(extrusion.direction, extrusion.depth);
+                        wbv.solids.insert(name.to_owned(), res);
+                    }
                 }
             }
         }
@@ -226,6 +225,7 @@ pub struct WorkbenchView {
     pub points: HashMap<String, Point>,
     pub planes: HashMap<String, Plane>,
     pub sketches: HashMap<String, SketchView>,
+    pub solids: HashMap<String, Solid>,
 }
 
 impl WorkbenchView {
@@ -234,6 +234,7 @@ impl WorkbenchView {
             points: HashMap::new(),
             planes: HashMap::new(),
             sketches: HashMap::new(),
+            solids: HashMap::new(),
         }
     }
 
@@ -263,11 +264,19 @@ mod tests {
         ];
         let mut sketch1 = Sketch::new();
         sketch1.add_segments(segments);
-        wb.add_sketch("sketch1", sketch1, "Top");
+        wb.add_sketch("sketch1", sketch1, "Right");
 
         wb.add_extrusion("ext1", "sketch1", 10.0, vec![0], Operation::New);
 
         let wbv = wb.create_view(100);
-        println!("WB View sketches: {:?}", wbv.sketches);
+        // println!("WB View sketches: {:?}", wbv.sketches);
+
+        // println!("\nWB View solids: {:?}", wbv.solids);
+        let solid = wbv.solids.get("ext1").unwrap();
+        // println!("Solid: {:?}", solid);
+        let as_mesh = solid.get_mesh();
+        println!("Mesh: {:?}", as_mesh);
+
+        solid.save_as_obj("test0.obj");
     }
 }
