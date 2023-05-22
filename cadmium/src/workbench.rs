@@ -161,10 +161,13 @@ impl Workbench {
                 } => {
                     let sketchview = wbv.sketches.get(sketch).unwrap();
 
+                    let mut count = 0;
                     for face_index in faces.iter() {
                         let face = &sketchview.faces[*face_index];
                         let res = face.tsweep(extrusion.direction, extrusion.depth);
-                        wbv.solids.insert(name.to_owned(), res);
+                        let solid_name = format!("{}_{}", name, count);
+                        wbv.solids.insert(solid_name.to_owned(), res);
+                        count += 1;
                     }
                 }
             }
@@ -245,38 +248,68 @@ impl WorkbenchView {
 
 #[cfg(test)]
 mod tests {
+    use crate::sketch;
+
     use super::*;
 
     #[test]
-    fn test0() {
+    fn test_trangular_prism() {
         let mut wb = Workbench::new("wb");
 
         let a = Point2D::new(-1.0, 0.0, "A");
         let b = Point2D::new(1.0, 0.0, "B");
         let c = Point2D::new(0.0, 1.0, "C");
-        let line_ab = Line::new(a.clone(), b.clone());
-        let line_bc = Line::new(b.clone(), c.clone());
-        let line_ca = Line::new(c.clone(), a.clone());
-        let segments = vec![
-            Segment::Line(line_ab),
-            Segment::Line(line_bc),
-            Segment::Line(line_ca),
-        ];
+        let segments = Segment::link(vec![a, b, c], true);
         let mut sketch1 = Sketch::new();
         sketch1.add_segments(segments);
-        wb.add_sketch("sketch1", sketch1, "Right");
+        wb.add_sketch("sketch1", sketch1, "Front");
 
         wb.add_extrusion("ext1", "sketch1", 10.0, vec![0], Operation::New);
 
         let wbv = wb.create_view(100);
-        // println!("WB View sketches: {:?}", wbv.sketches);
-
-        // println!("\nWB View solids: {:?}", wbv.solids);
-        let solid = wbv.solids.get("ext1").unwrap();
-        // println!("Solid: {:?}", solid);
+        let solid = wbv.solids.get("ext1_0").unwrap();
         let as_mesh = solid.get_mesh();
-        println!("Mesh: {:?}", as_mesh);
 
         solid.save_as_obj("test0.obj");
+    }
+
+    #[test]
+    fn test_square_with_hole() {
+        let mut wb = Workbench::new("wb");
+
+        // d    c
+        //
+        // a    b
+        let a = Point2D::new(-1.0, -1.0, "A");
+        let b = Point2D::new(1.0, -1.0, "B");
+        let c = Point2D::new(1.0, 1.0, "C");
+        let d = Point2D::new(-1.0, 1.0, "D");
+        // let mut segments_0 = Segment::link(vec![a, d, c, b], true);
+        let mut segments_0 = Segment::link(vec![a, b, c, d], true);
+
+        let e = Point2D::new(-2.0, -2.0, "E");
+        let f = Point2D::new(2.0, -2.0, "F");
+        let g = Point2D::new(2.0, 2.0, "G");
+        let h = Point2D::new(-2.0, 2.0, "H");
+        let segments_1 = Segment::link(vec![e, f, g, h], true);
+
+        segments_0.extend(segments_1);
+
+        let mut sketch1 = Sketch::new();
+        sketch1.add_segments(segments_0);
+        // let faces = sketch1.find_faces(false);
+        // for face in faces.iter() {
+        //     println!("face: {:?}", face);
+        // }
+        wb.add_sketch("sketch1", sketch1, "Front");
+
+        wb.add_extrusion("ext1", "sketch1", 4.0, vec![1], Operation::New);
+
+        let wbv = wb.create_view(100);
+
+        let solid = wbv.solids.get("ext1_0").unwrap();
+        let as_mesh = solid.get_mesh();
+
+        solid.save_as_obj("test1.obj");
     }
 }

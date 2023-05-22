@@ -132,7 +132,7 @@ impl LineFace {
     pub fn to_face(&self) -> Face {
         let mut wires: Vec<Wire> = vec![self.exterior.to_wire()];
         for r in &self.interiors {
-            wires.push(r.to_wire());
+            wires.push(r.to_wire().inverse());
         }
         let face = builder::try_attach_plane(&wires).unwrap();
         face

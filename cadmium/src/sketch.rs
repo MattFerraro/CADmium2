@@ -269,6 +269,24 @@ impl Segment {
     pub fn equals_or_reverse_equals(&self, other: &Self) -> bool {
         self == other || self == &other.reverse()
     }
+
+    pub fn link(points: Vec<Point>, closed: bool) -> Vec<Segment> {
+        let mut segments: Vec<Segment> = vec![];
+        for i in 0..points.len() - 1 {
+            let start = points[i].clone();
+            let end = points[i + 1].clone();
+            let line = Line::new(start, end);
+            segments.push(Segment::Line(line));
+        }
+
+        if closed {
+            let start = points.last().unwrap().clone();
+            let end = points.first().unwrap().clone();
+            let line = Line::new(start, end);
+            segments.push(Segment::Line(line));
+        }
+        segments
+    }
 }
 
 type Ring = Vec<Segment>;
