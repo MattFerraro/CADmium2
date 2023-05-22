@@ -277,14 +277,10 @@ mod tests {
     fn test_square_with_hole() {
         let mut wb = Workbench::new("wb");
 
-        // d    c
-        //
-        // a    b
         let a = Point2D::new(-1.0, -1.0, "A");
         let b = Point2D::new(1.0, -1.0, "B");
         let c = Point2D::new(1.0, 1.0, "C");
         let d = Point2D::new(-1.0, 1.0, "D");
-        // let mut segments_0 = Segment::link(vec![a, d, c, b], true);
         let mut segments_0 = Segment::link(vec![a, b, c, d], true);
 
         let e = Point2D::new(-2.0, -2.0, "E");
@@ -297,12 +293,8 @@ mod tests {
 
         let mut sketch1 = Sketch::new();
         sketch1.add_segments(segments_0);
-        // let faces = sketch1.find_faces(false);
-        // for face in faces.iter() {
-        //     println!("face: {:?}", face);
-        // }
-        wb.add_sketch("sketch1", sketch1, "Front");
 
+        wb.add_sketch("sketch1", sketch1, "Front");
         wb.add_extrusion("ext1", "sketch1", 4.0, vec![1], Operation::New);
 
         let wbv = wb.create_view(100);
