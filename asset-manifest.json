@@ -1,16 +1,18 @@
 {
   "files": {
     "main.css": "https://mattferraro.github.io/CADmium2/static/css/main.073c9b0a.css",
-    "main.js": "https://mattferraro.github.io/CADmium2/static/js/main.86c28c74.js",
+    "main.js": "https://mattferraro.github.io/CADmium2/static/js/main.bf793899.js",
     "static/js/787.11f74825.chunk.js": "https://mattferraro.github.io/CADmium2/static/js/787.11f74825.chunk.js",
-    "static/media/truck_js_bg.wasm": "https://mattferraro.github.io/CADmium2/static/media/truck_js_bg.8737608510e2aeb33984.wasm",
+    "static/media/cadmium_js_bg.wasm": "https://mattferraro.github.io/CADmium2/static/media/cadmium_js_bg.0cc64c36f258d668968d.wasm",
+    "static/media/extrude_min.svg": "https://mattferraro.github.io/CADmium2/static/media/extrude_min.5ab9b7a7c1bf5e92d7412622c74fd16e.svg",
     "index.html": "https://mattferraro.github.io/CADmium2/index.html",
+    "static/media/sketch_min.svg": "https://mattferraro.github.io/CADmium2/static/media/sketch_min.0078c21dc9e98b29eb435ab44bd0f229.svg",
     "main.073c9b0a.css.map": "https://mattferraro.github.io/CADmium2/static/css/main.073c9b0a.css.map",
-    "main.86c28c74.js.map": "https://mattferraro.github.io/CADmium2/static/js/main.86c28c74.js.map",
+    "main.bf793899.js.map": "https://mattferraro.github.io/CADmium2/static/js/main.bf793899.js.map",
     "787.11f74825.chunk.js.map": "https://mattferraro.github.io/CADmium2/static/js/787.11f74825.chunk.js.map"
   },
   "entrypoints": [
     "static/css/main.073c9b0a.css",
-    "static/js/main.86c28c74.js"
+    "static/js/main.bf793899.js"
   ]
 }
