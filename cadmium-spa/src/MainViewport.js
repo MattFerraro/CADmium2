@@ -76,7 +76,9 @@ function TruckHandler(props) {
 
       const rings = sketch1.find_rings();
 
-
+      console.log(rings);
+      console.log(rings[0].to_string());
+      console.log(rings[1].to_string());
       // TODO: find faces now!
       // Then etrude a face into a shape!
 
