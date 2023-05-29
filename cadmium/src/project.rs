@@ -18,9 +18,18 @@ impl Project {
             assemblies: vec![],
         };
 
-        let bench0 = Workbench::new("workbench1");
+        let bench0 = Workbench::new("workbench0");
         p.workbenches.push(bench0);
 
         p
+    }
+
+    pub fn get_workbench(&self, name: &str) -> Option<&Workbench> {
+        for wb in self.workbenches.iter() {
+            if wb.name == name {
+                return Some(wb);
+            }
+        }
+        None
     }
 }

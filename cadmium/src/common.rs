@@ -1,12 +1,12 @@
 #![allow(unused_variables)]
 #![allow(unused_imports)]
 
+use crate::sketch::Point as SketchPoint;
+use serde::{Deserialize, Serialize};
 use truck_meshalgo::prelude::*;
 use truck_modeling::{builder, Curve, Edge, Face, Point3, Vector3, Vertex, Wire};
 
-use crate::sketch::Point as SketchPoint;
-
-#[derive(Debug, Clone, Copy)]
+#[derive(Serialize, Deserialize, Debug, Clone, Copy)]
 pub struct Point {
     pub x: f64,
     pub y: f64,
@@ -52,7 +52,7 @@ impl Point {
     }
 }
 
-#[derive(Debug, Clone, Copy)]
+#[derive(Serialize, Deserialize, Debug, Clone, Copy)]
 pub struct Vector {
     pub x: f64,
     pub y: f64,
@@ -105,13 +105,19 @@ impl Vector {
     }
 }
 
-#[derive(Debug, Clone)]
+#[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct UV {
     pub u: f64,
     pub v: f64,
 }
 
-#[derive(Debug, Clone)]
+impl UV {
+    pub fn new(u: f64, v: f64) -> Self {
+        UV { u, v }
+    }
+}
+
+#[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct LineFace {
     pub exterior: LineRing,
     pub interiors: Vec<LineRing>,
@@ -147,7 +153,7 @@ impl LineFace {
     }
 }
 
-#[derive(Debug, Clone)]
+#[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct LineRing {
     pub segments: Vec<LineSegment>,
 }
@@ -185,7 +191,7 @@ impl LineRing {
     }
 }
 
-#[derive(Debug, Clone, Copy)]
+#[derive(Serialize, Deserialize, Debug, Clone, Copy)]
 pub struct LineSegment {
     pub start: Point,
     pub end: Point,
@@ -201,12 +207,15 @@ impl LineSegment {
     }
 }
 
-#[derive(Debug, Clone)]
+#[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct Plane {
     pub origin: Point,
     pub x_axis: Vector,
     pub y_axis: Vector,
     pub normal: Vector,
+    pub frame: CoordinateFrame,
+    pub width: f64,
+    pub height: f64,
 }
 
 impl Plane {
@@ -216,6 +225,14 @@ impl Plane {
             x_axis: x,
             y_axis: y,
             normal,
+            frame: CoordinateFrame {
+                origin,
+                x_axis: x,
+                y_axis: y,
+                normal,
+            },
+            width: 1.0,
+            height: 1.0,
         }
     }
 
@@ -229,7 +246,7 @@ impl Plane {
     }
 }
 
-#[derive(Debug, Clone)]
+#[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct CoordinateFrame {
     pub origin: Point,
     pub x_axis: Vector,
@@ -254,7 +271,7 @@ impl CoordinateFrame {
     }
 }
 
-#[derive(Debug, Clone)]
+#[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct Mesh {
     pub vertices: Vec<Point>,
     pub normals: Vec<Vector>,
@@ -326,7 +343,7 @@ impl Solid {
     }
 }
 
-#[derive(Debug, Clone)]
+#[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct Color {
     pub r: f64,
     pub g: f64,

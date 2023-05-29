@@ -5,9 +5,10 @@
 use crate::common::{Plane, Point, Solid, Vector};
 use crate::sketch::Point as Point2D;
 use crate::sketch::{Line, Segment, Sketch, SketchView};
+use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 
-#[derive(Debug)]
+#[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct Workbench {
     pub name: String,
     pub steps: Vec<Step>,
@@ -177,7 +178,7 @@ impl Workbench {
     }
 }
 
-#[derive(Debug)]
+#[derive(Serialize, Deserialize, Debug, Clone)]
 pub enum Step {
     Point {
         name: String,
@@ -200,14 +201,14 @@ pub enum Step {
     },
 }
 
-#[derive(Debug)]
+#[derive(Serialize, Deserialize, Debug, Clone)]
 pub enum Operation {
     New,
     Add,
     Remove,
 }
 
-#[derive(Debug)]
+#[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct Extrusion {
     pub depth: f64,
     pub direction: Vector,

@@ -9,9 +9,10 @@ use geo::Contains;
 use geo::LineString;
 use geo::Polygon;
 use num_complex::Complex;
+use serde::{Deserialize, Serialize};
 use std::{f64::consts::PI, f64::consts::TAU, fmt};
 
-#[derive(Debug, Clone)]
+#[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct Point {
     pub x: f64,
     pub y: f64,
@@ -67,7 +68,7 @@ pub fn angle(a: &Point, b: &Point, c: &Point) -> f64 {
     naive_angle
 }
 
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Serialize, Deserialize, Debug, Clone, PartialEq, Eq)]
 pub struct Line {
     pub start: Point,
     pub end: Point,
@@ -92,7 +93,13 @@ impl Line {
     }
 }
 
-#[derive(Debug, Clone, PartialEq, Eq)]
+impl fmt::Display for Line {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "Line ({}, {})", self.start, self.end)
+    }
+}
+
+#[derive(Serialize, Deserialize, Debug, Clone, PartialEq, Eq)]
 pub struct Arc {
     pub start: Point,
     pub end: Point,
@@ -222,7 +229,7 @@ pub struct Circle {
     pub radius: f64,
 }
 
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Serialize, Deserialize, Debug, Clone, PartialEq, Eq)]
 pub enum Segment {
     Line(Line),
     Arc(Arc),
@@ -289,7 +296,7 @@ impl Segment {
     }
 }
 
-type Ring = Vec<Segment>;
+pub type Ring = Vec<Segment>;
 
 pub fn as_polygon(ring: &Ring) -> Polygon {
     let mut b: Vec<(f64, f64)> = vec![];
@@ -319,12 +326,40 @@ pub fn pretty_print(ring: &Ring) {
     println!();
 }
 
+#[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct Face {
     pub exterior: Ring,
     pub interiors: Vec<Ring>,
 }
 
-#[derive(Debug, Clone)]
+impl Face {
+    pub fn from_polygon(polygon: &Polygon) -> Face {
+        let exterior_coords: Vec<&geo::Coord> = polygon.exterior().coords().collect();
+        let exterior_points: Vec<Point> = exterior_coords
+            .iter()
+            .map(|c| Point::new(c.x, c.y, "e"))
+            .collect();
+        let exterior = Segment::link(exterior_points, true);
+
+        let mut interiors: Vec<Ring> = vec![];
+        for interior in polygon.interiors() {
+            let interior_coords: Vec<&geo::Coord> = interior.coords().collect();
+            let interior_points: Vec<Point> = interior_coords
+                .iter()
+                .map(|c| Point::new(c.x, c.y, "i"))
+                .collect();
+            let interior_ring = Segment::link(interior_points, true);
+            interiors.push(interior_ring);
+        }
+
+        Face {
+            exterior,
+            interiors,
+        }
+    }
+}
+
+#[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct Sketch {
     pub segments: Vec<Segment>,
 }
@@ -338,7 +373,7 @@ impl Sketch {
         self.segments.extend(segments);
     }
 
-    pub fn find_faces(&self, debug: bool) -> Vec<Polygon> {
+    pub fn find_faces(&self, debug: bool) -> Vec<Face> {
         let rings = self.find_rings(debug);
 
         let mut polygons: Vec<Polygon> = rings
@@ -379,7 +414,8 @@ impl Sketch {
             bigger.interiors_push(new_interior);
         }
 
-        polygons
+        let faces: Vec<Face> = polygons.iter().map(|p| Face::from_polygon(p)).collect();
+        faces
     }
 
     pub fn find_rings(&self, debug: bool) -> Vec<Ring> {
@@ -480,11 +516,9 @@ impl Sketch {
         for face in faces.iter() {
             let mut exterior: LineRing = LineRing::new();
             let mut interiors: Vec<LineRing> = vec![];
-            let exterior_coords: Vec<&geo::Coord> = face.exterior().coords().collect();
-            let exterior_points: Vec<Point> = exterior_coords
-                .iter()
-                .map(|c| Point::new(c.x, c.y, "exterior"))
-                .collect();
+            // let exterior_coords: Vec<&geo::Coord> = face.exterior().coords().collect();
+            let exterior_points: Vec<Point> = face.exterior.iter().map(|s| s.get_start()).collect();
+
             for i in 0..exterior_points.len() - 1 {
                 let start = exterior_points[i].clone();
                 let end = exterior_points[i + 1].clone();
@@ -502,12 +536,13 @@ impl Sketch {
                 interiors: vec![],
             });
 
-            for interior in face.interiors() {
-                let interior_coords: Vec<&geo::Coord> = interior.coords().collect();
-                let interior_points: Vec<Point> = interior_coords
-                    .iter()
-                    .map(|c| Point::new(c.x, c.y, "interior"))
-                    .collect();
+            for interior in face.interiors.iter() {
+                // let interior_coords: Vec<&geo::Coord> = interior.coords().collect();
+                // let interior_points: Vec<Point> = interior_coords
+                //     .iter()
+                //     .map(|c| Point::new(c.x, c.y, "interior"))
+                //     .collect();
+                let interior_points: Vec<Point> = interior.iter().map(|s| s.get_start()).collect();
                 let mut interior_ring: LineRing = LineRing::new();
                 for i in 0..interior_points.len() - 1 {
                     let start = interior_points[i].clone();

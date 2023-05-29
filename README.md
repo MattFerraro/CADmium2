@@ -40,3 +40,10 @@ As an Electron app:
 npm run build-electron
 npm run elect
 ```
+
+
+# TODO:
+
+- Remove the "id" field from cadmium::sketch::Point
+- Simplify the cadmium::common:Plane field to remove extra fields
+- cadmium::sketch::Ring should be a struct not a type alias

@@ -5,7 +5,7 @@ import { CameraControls } from '@react-three/drei'
 import * as THREE from 'three'
 // import init, * as Truck from 'truck-js'
 // import { initSync } from 'cadmium-js'
-import { default as init, greet, new_part_studio } from "cadmium-js";
+import { default as init, new_project, Point, Point2D, Line, Ring, Sketch } from "cadmium-js";
 // const CAD = import('cadmium-js');
 
 import { useThree } from '@react-three/fiber'
@@ -45,12 +45,42 @@ function MainViewport() {
 function TruckHandler(props) {
   const state = useThree()
   useEffect(() => {
-    console.log("Hello!");
+    // console.log("Hello!");
 
-    console.log(init)
+    // console.log(init)
     init().then(() => {
-      greet("matt");
-      new_part_studio();
+      // greet("matt");
+      // new_part_studio();
+
+      // const p = new Point(1.6, 0.5, -0.5);
+      // console.log(p);
+
+      // const project = new_project();
+      // const wb0 = project.get_workbench("workbench0");
+
+      // const wb1 = project.get_workbench("workbench0");
+
+
+      const a = new Point2D(-1.0, 0);
+      const b = new Point2D(1.0, 0);
+      const c = new Point2D(0.0, 1.0);
+
+      const ab = new Line(a, b);
+      const bc = new Line(b, c);
+      const ca = new Line(c, a);
+
+      const sketch1 = new Sketch();
+      sketch1.add_line(ab);
+      sketch1.add_line(bc);
+      sketch1.add_line(ca);
+
+      const rings = sketch1.find_rings();
+
+
+      // TODO: find faces now!
+      // Then etrude a face into a shape!
+
+
     });
 
     // initSync().then(() => {

@@ -64,6 +64,7 @@ version = "0.1.0"
 dependencies = [
  "geo",
  "num-complex",
+ "serde",
  "truck-meshalgo",
  "truck-modeling",
 ]
