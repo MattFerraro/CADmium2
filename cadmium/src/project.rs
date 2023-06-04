@@ -18,7 +18,8 @@ impl Project {
             assemblies: vec![],
         };
 
-        let bench0 = Workbench::new("workbench0");
+        let mut bench0 = Workbench::new("workbench0");
+        bench0.add_sketch_and_extrusion();
         p.workbenches.push(bench0);
 
         p

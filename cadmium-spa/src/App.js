@@ -1,16 +1,19 @@
 import './App.css'
-import React, { useEffect, useRef, useState } from 'react'
-import { AppShell, Navbar, Header } from '@mantine/core'
+import React, { useEffect, useState } from 'react'
 import { MantineProvider, ColorSchemeProvider } from '@mantine/core'
 import { useHotkeys, useLocalStorage } from '@mantine/hooks'
 import MainWindow from './MainWindow'
-// import init, * as Cad from 'cadmium-js'
+
 
 // import init { greet, demo } from "cadmium-js";
 // import init, * as Truck from "./truck_js.js";
 // import init, * as Truck from "truck-js";
 
+import { default as init, new_project } from "cadmium-js";
+
 function App() {
+  const [project, setProject] = useState(null);
+
   const [colorScheme, setColorScheme] = useLocalStorage({
     key: 'mantine-color-scheme',
     defaultValue: 'light',
@@ -21,6 +24,20 @@ function App() {
     setColorScheme(value || (colorScheme === 'dark' ? 'light' : 'dark'))
 
   useHotkeys([['mod+J', () => toggleColorScheme()]])
+
+  const runOnLoad = async () => {
+    console.log("Loading cadmium-js");
+    await init();
+    console.log("Loaded cadmium-js");
+    const project = new_project();
+    console.log(project.workbench_names);
+    setProject(project);
+  }
+
+  useEffect(() => {
+    runOnLoad();
+  }, []);
+
 
   return (
     <div className="App">
@@ -34,7 +51,7 @@ function App() {
             withGlobalStyles
             withNormalizeCSS
           >
-            <MainWindow></MainWindow>
+            <MainWindow project={project}></MainWindow>
           </MantineProvider>
         </ColorSchemeProvider>
       </header>

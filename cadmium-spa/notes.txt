@@ -1,0 +1,2 @@
+// formerly in package.json:
+// "cadmium-js": "^0.1.0"

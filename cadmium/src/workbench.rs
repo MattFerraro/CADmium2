@@ -38,6 +38,18 @@ impl Workbench {
         w
     }
 
+    pub fn add_sketch_and_extrusion(&mut self) {
+        let a = Point2D::new(-1.0, 0.0, "A");
+        let b = Point2D::new(1.0, 0.0, "B");
+        let c = Point2D::new(0.0, 1.0, "C");
+        let segments = Segment::link(vec![a, b, c], true);
+        let mut sketch1 = Sketch::new();
+        sketch1.add_segments(segments);
+        self.add_sketch("sketch1", sketch1, "Front");
+
+        self.add_extrusion("ext1", "sketch1", 10.0, vec![0], Operation::New);
+    }
+
     pub fn add_point(&mut self, name: &str, p: Point) {
         self.steps.push(Step::Point {
             name: name.to_owned(),
