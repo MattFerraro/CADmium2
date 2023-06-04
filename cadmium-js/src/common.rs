@@ -3,7 +3,7 @@ use wasm_bindgen::prelude::*;
 use cadmium::{self};
 
 #[wasm_bindgen]
-#[derive(Clone, Debug)]
+#[derive(Clone, Copy, Debug)]
 pub struct Point(cadmium::common::Point);
 
 #[wasm_bindgen]
@@ -24,6 +24,18 @@ impl Point {
     #[wasm_bindgen(getter)]
     pub fn z(&self) -> f64 {
         self.0.z
+    }
+}
+
+// impl From<cadmium::common::Point> for Point {
+//     fn from(point: cadmium::common::Point) -> Point {
+//         Point(point)
+//     }
+// }
+
+impl Point {
+    pub fn wrap(point: cadmium::common::Point) -> Point {
+        Point(point)
     }
 }
 
@@ -73,6 +85,12 @@ impl Vector {
     }
 }
 
+impl Vector {
+    pub fn wrap(point: cadmium::common::Vector) -> Vector {
+        Vector(point)
+    }
+}
+
 #[wasm_bindgen]
 #[derive(Clone, Debug)]
 pub struct CoordinateFrame(cadmium::common::CoordinateFrame);
@@ -97,6 +115,12 @@ impl CoordinateFrame {
     #[wasm_bindgen(getter)]
     pub fn normal(&self) -> Vector {
         Vector(self.0.normal)
+    }
+}
+
+impl CoordinateFrame {
+    pub fn wrap(point: cadmium::common::CoordinateFrame) -> CoordinateFrame {
+        CoordinateFrame(point)
     }
 }
 
@@ -146,5 +170,53 @@ impl LineFace {
     #[wasm_bindgen]
     pub fn get_interior(&self, index: u32) -> LineRing {
         LineRing(self.0.interiors[index as usize].clone())
+    }
+}
+
+#[wasm_bindgen]
+#[derive(Clone, Copy, Debug)]
+pub struct Plane(cadmium::common::Plane);
+
+#[wasm_bindgen]
+impl Plane {
+    #[wasm_bindgen(constructor)]
+    pub fn new(origin: Point, x: Vector, y: Vector, normal: Vector) -> Plane {
+        Plane(cadmium::common::Plane::new(origin.0, x.0, y.0, normal.0))
+    }
+
+    #[wasm_bindgen(getter)]
+    pub fn origin(&self) -> Point {
+        Point(self.0.origin)
+    }
+
+    #[wasm_bindgen(getter)]
+    pub fn x_axis(&self) -> Vector {
+        Vector(self.0.x_axis)
+    }
+
+    #[wasm_bindgen(getter)]
+    pub fn y_axis(&self) -> Vector {
+        Vector(self.0.y_axis)
+    }
+
+    #[wasm_bindgen(getter)]
+    pub fn normal(&self) -> Vector {
+        Vector(self.0.normal)
+    }
+
+    #[wasm_bindgen(getter)]
+    pub fn width(&self) -> f64 {
+        self.0.width
+    }
+
+    #[wasm_bindgen(getter)]
+    pub fn height(&self) -> f64 {
+        self.0.height
+    }
+}
+
+impl Plane {
+    pub fn wrap(point: cadmium::common::Plane) -> Plane {
+        Plane(point)
     }
 }

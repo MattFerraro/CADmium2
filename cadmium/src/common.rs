@@ -207,7 +207,7 @@ impl LineSegment {
     }
 }
 
-#[derive(Serialize, Deserialize, Debug, Clone)]
+#[derive(Serialize, Deserialize, Debug, Clone, Copy)]
 pub struct Plane {
     pub origin: Point,
     pub x_axis: Vector,
@@ -246,7 +246,7 @@ impl Plane {
     }
 }
 
-#[derive(Serialize, Deserialize, Debug, Clone)]
+#[derive(Serialize, Deserialize, Debug, Clone, Copy)]
 pub struct CoordinateFrame {
     pub origin: Point,
     pub x_axis: Vector,

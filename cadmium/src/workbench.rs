@@ -45,9 +45,9 @@ impl Workbench {
         let segments = Segment::link(vec![a, b, c], true);
         let mut sketch1 = Sketch::new();
         sketch1.add_segments(segments);
-        self.add_sketch("sketch1", sketch1, "Front");
+        self.add_sketch("Sketch 1", sketch1, "Front");
 
-        self.add_extrusion("ext1", "sketch1", 10.0, vec![0], Operation::New);
+        self.add_extrusion("Extrude 1", "Sketch 1", 10.0, vec![0], Operation::New);
     }
 
     pub fn add_point(&mut self, name: &str, p: Point) {

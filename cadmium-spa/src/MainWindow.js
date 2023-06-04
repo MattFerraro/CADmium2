@@ -6,9 +6,13 @@ import WorkbenchView from './WorkbenchView'
 import AssemblyView from './AssemblyView'
 import extrude_min from './images/extrude_min.svg';
 import sketch_min from './images/sketch_min.svg';
+import point_min from './images/point_min.svg'
+import plane_min from './images/plane_min.svg'
 import { act } from '@react-three/fiber';
 import logo from './logo.svg';
 import { IconSettings } from '@tabler/icons-react';
+import { NewPointStep, NewPlaneStep, NewSketchStep, NewExtrudeStep } from "cadmium-js";
+
 
 // Cadmium blue:    #0a1195
 // Cadmium red:     #e30022
@@ -21,6 +25,9 @@ function MainWindow({ project }) {
   const [activeTab, setActiveTab] = useState('Workbench 1');
 
 
+  const workbench = project && project.get_workbench(activeTab);
+  const steps = workbench && workbench.get_steps();
+
   return (
     <AppShell
       padding="sm"
@@ -28,9 +35,28 @@ function MainWindow({ project }) {
       asideOffsetBreakpoint="sm"
       navbar={
         <Navbar p="md" hiddenBreakpoint="sm" hidden={!opened} width={{ sm: 200, lg: 300 }}>
-          <Text>History of operations</Text>
-          <Text>List of Solid Parts</Text>
-        </Navbar>
+          <Text>History</Text>
+          {steps && steps.map((step, index) => {
+            let image = null;
+            if (step instanceof NewPointStep) {
+              image = <img src={point_min} width="30px"></img>
+            }
+            else if (step instanceof NewPlaneStep) {
+              image = <img src={plane_min} width="30px"></img>
+            }
+            else if (step instanceof NewSketchStep) {
+              image = <img src={sketch_min} width="30px"></img>
+            }
+            else if (step instanceof NewExtrudeStep) {
+              image = <img src={extrude_min} width="30px"></img>
+            }
+
+            return <div className='history-element' key={index}>{image}<Text>{step.name}</Text></div>
+          })}
+
+          <hr style={{ width: "100%" }}></hr>
+          <Text>Solids</Text>
+        </ Navbar>
       }
       // TODO: revive and put stuff here? if required.
       // aside={
@@ -41,7 +67,7 @@ function MainWindow({ project }) {
       //   </MediaQuery>
       // }
       footer={
-        <Footer height={60} p="md" style={{
+        < Footer height={60} p="md" style={{
           height: "40px", paddingTop: "0px", paddingBottom: "0px",
         }}>
           {/* <div style={{ display: 'flex', alignItems: 'center', height: '100%' }}></div> */}

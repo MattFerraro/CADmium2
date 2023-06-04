@@ -1,6 +1,7 @@
 // use crate::workbench::Workbench;
 use cadmium::project as cad_project;
 // use cadmium::workbench as cad_workbench;
+use crate::workbench::Workbench;
 use js_sys::Array;
 use wasm_bindgen::prelude::*;
 
@@ -36,12 +37,12 @@ impl Project {
         retval
     }
 
-    // #[wasm_bindgen]
-    // pub fn get_workbench(&self, name: &str) -> Option<cad_workbench::Workbench> {
-    //     let wb = self.0.get_workbench(name);
-    //     match wb {
-    //         Some(wb) => Some(Workbench(wb.clone())),
-    //         None => None,
-    //     }
-    // }
+    #[wasm_bindgen]
+    pub fn get_workbench(&self, name: &str) -> Option<Workbench> {
+        let wb_option = self.0.get_workbench(name);
+        match wb_option {
+            Some(wb) => Some(Workbench::wrap(wb)),
+            None => None,
+        }
+    }
 }
