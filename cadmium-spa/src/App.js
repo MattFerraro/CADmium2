@@ -26,14 +26,9 @@ function App() {
   useHotkeys([['mod+J', () => toggleColorScheme()]])
 
   const runOnLoad = async () => {
-    // console.log("Loading cadmium-js");
     await init();
-    // console.log("Loaded cadmium-js");
     const project = new_project();
-    console.log(project.workbench_names);
     const a = project.get_workbench("Workbench 1");
-    console.log(a);
-    console.log(a.get_steps());
     setProject(project);
   }
 

@@ -27,6 +27,8 @@ function MainWindow({ project }) {
 
   const workbench = project && project.get_workbench(activeTab);
   const steps = workbench && workbench.get_steps();
+  const workbenchView = steps && workbench.create_view(1000);
+  console.log("WBV: ", workbenchView);
 
   return (
     <AppShell

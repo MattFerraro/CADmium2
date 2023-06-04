@@ -220,3 +220,12 @@ impl Plane {
         Plane(point)
     }
 }
+
+#[wasm_bindgen]
+pub struct Solid(cadmium::common::Solid);
+
+impl Solid {
+    pub fn wrap(point: cadmium::common::Solid) -> Solid {
+        Solid(point)
+    }
+}

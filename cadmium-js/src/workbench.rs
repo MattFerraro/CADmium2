@@ -1,4 +1,5 @@
-use crate::common::{Plane, Point};
+use crate::common::{Plane, Point, Solid};
+use crate::sketch;
 use cadmium::workbench as cad_workbench;
 use js_sys::Array;
 use wasm_bindgen::prelude::*;
@@ -59,6 +60,12 @@ impl Workbench {
         }
         retval
     }
+
+    #[wasm_bindgen]
+    pub fn create_view(&self, max_steps: usize) -> WorkbenchView {
+        let wbv = self.0.create_view(max_steps);
+        WorkbenchView(wbv)
+    }
 }
 
 impl Workbench {
@@ -115,5 +122,65 @@ impl NewExtrudeStep {
     #[wasm_bindgen(getter)]
     pub fn name(&self) -> String {
         self.name.to_owned()
+    }
+}
+
+#[wasm_bindgen]
+pub struct WorkbenchView(cad_workbench::WorkbenchView);
+
+#[wasm_bindgen]
+impl WorkbenchView {
+    #[wasm_bindgen(getter)]
+    pub fn points(&self) -> Array {
+        let retval = Array::new();
+        for (name, point) in self.0.points.iter() {
+            let js_map = js_sys::Map::new();
+            js_map.set(&JsValue::from("name"), &JsValue::from(name.to_owned()));
+            js_map.set(&JsValue::from("point"), &JsValue::from(Point::wrap(*point)));
+            retval.push(&js_map);
+        }
+        retval
+    }
+
+    #[wasm_bindgen(getter)]
+    pub fn planes(&self) -> Array {
+        let retval = Array::new();
+        for (name, plane) in self.0.planes.iter() {
+            let js_map = js_sys::Map::new();
+            js_map.set(&JsValue::from("name"), &JsValue::from(name.to_owned()));
+            js_map.set(&JsValue::from("plane"), &JsValue::from(Plane::wrap(*plane)));
+            retval.push(&js_map);
+        }
+        retval
+    }
+
+    #[wasm_bindgen(getter)]
+    pub fn sketches(&self) -> Array {
+        let retval = Array::new();
+        for (name, sketch) in self.0.sketches.iter() {
+            let js_map = js_sys::Map::new();
+            js_map.set(&JsValue::from("name"), &JsValue::from(name.to_owned()));
+            js_map.set(
+                &JsValue::from("sketch"),
+                &JsValue::from(sketch::SketchView::wrap(sketch)),
+            );
+            retval.push(&js_map);
+        }
+        retval
+    }
+
+    #[wasm_bindgen(getter)]
+    pub fn solids(&self) -> Array {
+        let retval = Array::new();
+        for (name, solid) in self.0.solids.iter() {
+            let js_map = js_sys::Map::new();
+            js_map.set(&JsValue::from("name"), &JsValue::from(name.to_owned()));
+            js_map.set(
+                &JsValue::from("solid"),
+                &JsValue::from(Solid::wrap(solid.clone())),
+            );
+            retval.push(&js_map);
+        }
+        retval
     }
 }

@@ -1,3 +1,4 @@
+use cadmium::sketch as cad_sketch;
 use cadmium::{self};
 use js_sys::Array;
 use wasm_bindgen::prelude::*;
@@ -186,5 +187,14 @@ impl Sketch {
             retval.push(&JsValue::from(Face(face.clone())));
         }
         retval
+    }
+}
+
+#[wasm_bindgen]
+pub struct SketchView(cadmium::sketch::SketchView);
+
+impl SketchView {
+    pub fn wrap(wb: &cad_sketch::SketchView) -> SketchView {
+        SketchView(wb.to_owned())
     }
 }
