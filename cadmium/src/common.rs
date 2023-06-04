@@ -105,7 +105,7 @@ impl Vector {
     }
 }
 
-#[derive(Serialize, Deserialize, Debug, Clone)]
+#[derive(Serialize, Deserialize, Debug, Clone, Copy)]
 pub struct UV {
     pub u: f64,
     pub v: f64,

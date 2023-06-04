@@ -13,7 +13,7 @@ import * as THREE from 'three'
 
 import { useThree } from '@react-three/fiber'
 
-function AssemblyView() {
+function AssemblyPane() {
   const mouseConfig = useCallback((camControls) => {
     if (camControls !== null) {
       camControls.mouseButtons.middle = 8
@@ -229,4 +229,4 @@ function Box(props) {
   )
 }
 
-export default AssemblyView
+export default AssemblyPane

@@ -1,16 +1,16 @@
 import './App.css'
 import React, { useRef, useState } from 'react'
 import { AppShell, Navbar, Header, Footer, Text, MediaQuery, Burger, useMantineTheme, Button, Tabs, ActionIcon } from '@mantine/core'
-import MainViewport from './MainViewport'
-import WorkbenchView from './WorkbenchView'
-import AssemblyView from './AssemblyView'
+// import MainViewport from './MainViewport'
+import WorkbenchPane from './WorkbenchPane'
+import AssemblyPane from './AssemblyPane'
 import extrude_min from './images/extrude_min.svg';
 import sketch_min from './images/sketch_min.svg';
 import point_min from './images/point_min.svg'
 import plane_min from './images/plane_min.svg'
 import { act } from '@react-three/fiber';
 import logo from './logo.svg';
-import { IconSettings } from '@tabler/icons-react';
+// import { IconSettings } from '@tabler/icons-react';
 import { NewPointStep, NewPlaneStep, NewSketchStep, NewExtrudeStep } from "cadmium-js";
 
 
@@ -28,7 +28,6 @@ function MainWindow({ project }) {
   const workbench = project && project.get_workbench(activeTab);
   const steps = workbench && workbench.get_steps();
   const workbenchView = steps && workbench.create_view(1000);
-  console.log("WBV: ", workbenchView);
 
   return (
     <AppShell
@@ -72,15 +71,12 @@ function MainWindow({ project }) {
         < Footer height={60} p="md" style={{
           height: "40px", paddingTop: "0px", paddingBottom: "0px",
         }}>
-          {/* <div style={{ display: 'flex', alignItems: 'center', height: '100%' }}></div> */}
           < Tabs value={activeTab} onTabChange={setActiveTab} inverted variant="outline" >
-
             <Tabs.List>
               <Tabs.Tab value="Workbench 1">Workbench 1</Tabs.Tab>
               <Tabs.Tab value="Assembly 1">Assembly 1</Tabs.Tab>
             </Tabs.List>
           </Tabs >
-
         </Footer >
       }
       header={
@@ -121,11 +117,9 @@ function MainWindow({ project }) {
       })}
     >
 
+      {activeTab === "Workbench 1" && <WorkbenchPane workbenchView={workbenchView}></WorkbenchPane>}
+      {activeTab === "Assembly 1" && <AssemblyPane></AssemblyPane>}
 
-      {activeTab === "Workbench 1" && <WorkbenchView></WorkbenchView>}
-      {activeTab === "Assembly 1" && <AssemblyView></AssemblyView>}
-
-      {/* <MainViewport></MainViewport> */}
     </AppShell >
   )
 }

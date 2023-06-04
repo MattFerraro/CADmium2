@@ -1,3 +1,4 @@
+use js_sys::Array;
 use wasm_bindgen::prelude::*;
 
 use cadmium::{self};
@@ -57,6 +58,12 @@ impl UV {
     #[wasm_bindgen(getter)]
     pub fn v(&self) -> f64 {
         self.0.v
+    }
+}
+
+impl UV {
+    pub fn wrap(point: cadmium::common::UV) -> UV {
+        UV(point)
     }
 }
 
@@ -227,5 +234,54 @@ pub struct Solid(cadmium::common::Solid);
 impl Solid {
     pub fn wrap(point: cadmium::common::Solid) -> Solid {
         Solid(point)
+    }
+}
+
+#[wasm_bindgen]
+impl Solid {
+    pub fn get_mesh(&self) -> Mesh {
+        Mesh(self.0.get_mesh())
+    }
+}
+
+#[wasm_bindgen]
+pub struct Mesh(cadmium::common::Mesh);
+
+#[wasm_bindgen]
+impl Mesh {
+    #[wasm_bindgen(getter)]
+    pub fn vertices(&self) -> Array {
+        let retval = Array::new();
+        for vertex in self.0.vertices.iter() {
+            retval.push(&JsValue::from(Point::wrap(*vertex)));
+        }
+        retval
+    }
+
+    #[wasm_bindgen(getter)]
+    pub fn normals(&self) -> Array {
+        let retval = Array::new();
+        for normal in self.0.normals.iter() {
+            retval.push(&JsValue::from(Vector::wrap(*normal)));
+        }
+        retval
+    }
+
+    #[wasm_bindgen(getter)]
+    pub fn indices(&self) -> Array {
+        let retval = Array::new();
+        for index in self.0.indices.iter() {
+            retval.push(&JsValue::from_f64(*index as f64));
+        }
+        retval
+    }
+
+    #[wasm_bindgen(getter)]
+    pub fn uvs(&self) -> Array {
+        let retval = Array::new();
+        for uv in self.0.uvs.iter() {
+            retval.push(&JsValue::from(UV::wrap(*uv)));
+        }
+        retval
     }
 }
