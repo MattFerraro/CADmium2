@@ -11,7 +11,7 @@ pub struct Project(cad_project::Project);
 
 #[wasm_bindgen]
 pub fn new_project() -> Project {
-    let project = cad_project::Project::new("First Project");
+    let project = cad_project::Project::new("First Project", true);
     Project(project)
 }
 

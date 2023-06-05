@@ -26,6 +26,14 @@ impl Point {
         }
     }
 
+    pub fn add_vec(&self, other: Vector) -> Self {
+        Point {
+            x: other.x + self.x,
+            y: other.y + self.y,
+            z: other.z + self.z,
+        }
+    }
+
     pub fn to_vector(&self) -> Vector {
         Vector {
             x: self.x,
@@ -70,6 +78,35 @@ impl Vector {
             y: other.y + self.y,
             z: other.z + self.z,
         }
+    }
+
+    pub fn negate(&self) -> Self {
+        Vector {
+            x: -self.x,
+            y: -self.y,
+            z: -self.z,
+        }
+    }
+
+    pub fn cross(&self, other: Vector) -> Self {
+        Vector {
+            x: self.y * other.z - self.z * other.y,
+            y: -(self.x * other.z - self.z * other.x),
+            z: self.x * other.y - self.y * other.x,
+        }
+    }
+
+    pub fn normalize(&self) -> Self {
+        let len = (self.x * self.x + self.y * self.y + self.z * self.z).sqrt();
+        Vector {
+            x: self.x / len,
+            y: self.y / len,
+            z: self.z / len,
+        }
+    }
+
+    pub fn subtract(&self, other: Vector) -> Self {
+        self.add(other.negate())
     }
 
     pub fn to_point(&self) -> Point {
@@ -244,6 +281,77 @@ impl Plane {
             normal: self.normal,
         }
     }
+
+    pub fn get_mesh(&self) -> Mesh {
+        let mut vertices: Vec<Point> = vec![];
+        let mut normals: Vec<Vector> = vec![];
+        let mut uvs: Vec<UV> = vec![];
+        let mut indices: Vec<usize> = vec![];
+
+        let frame = self.frame;
+        let x_axis = frame.x_axis;
+        let y_axis = frame.y_axis;
+        let normal = frame.normal;
+
+        let half_width = self.width / 2.0;
+        let half_height = self.height / 2.0;
+
+        let p1 = frame
+            .origin
+            .add_vec(x_axis.scale(-half_width))
+            .add_vec(y_axis.scale(-half_height));
+        let p2 = frame
+            .origin
+            .add_vec(x_axis.scale(half_width))
+            .add_vec(y_axis.scale(-half_height));
+        let p3 = frame
+            .origin
+            .add_vec(x_axis.scale(half_width))
+            .add_vec(y_axis.scale(half_height));
+        let p4 = frame
+            .origin
+            .add_vec(x_axis.scale(-half_width))
+            .add_vec(y_axis.scale(half_height));
+
+        vertices.push(p1);
+        vertices.push(p2);
+        vertices.push(p3);
+        vertices.push(p4);
+
+        normals.push(normal);
+        normals.push(normal);
+        normals.push(normal);
+        normals.push(normal);
+
+        uvs.push(UV::new(0.0, 0.0));
+        uvs.push(UV::new(1.0, 0.0));
+        uvs.push(UV::new(1.0, 1.0));
+        uvs.push(UV::new(0.0, 1.0));
+
+        indices.push(0);
+        indices.push(1);
+        indices.push(2);
+        indices.push(0);
+        indices.push(2);
+        indices.push(3);
+
+        Mesh {
+            vertices,
+            normals,
+            uvs,
+            indices,
+        }
+    }
+
+    pub fn get_up(&self) -> Vector {
+        self.y_axis
+    }
+
+    pub fn get_upper_left(&self) -> Point {
+        self.origin
+            .add_vec(self.x_axis.scale(-self.width / 2.0))
+            .add_vec(self.y_axis.scale(self.height / 2.0))
+    }
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone, Copy)]
@@ -311,28 +419,63 @@ impl Solid {
         let mut mesh = self.truck_solid.triangulation(0.001).to_polygon();
         mesh.put_together_same_attrs();
 
-        Mesh {
-            vertices: mesh
-                .positions()
-                .iter()
-                .map(|p| Point::from_point3(*p))
-                .collect(),
-            normals: mesh
-                .normals()
-                .iter()
-                .map(|n| Vector::from_vector3(*n))
-                .collect(),
-            uvs: mesh
-                .uv_coords()
-                .iter()
-                .map(|uv| UV { u: uv.x, v: uv.y })
-                .collect(),
-            indices: mesh
-                .tri_faces()
-                .iter()
-                .flat_map(|tri| tri.iter().map(|v| v.pos))
-                .collect(),
+        // the mesh is prepared for obj export, but we need to convert it
+        // to a format compatible for rendering
+        // We have to brute force this. Go through every single triangle
+        // and emit three positions, three normals, and three uvs.
+        let mut vertices: Vec<Point> = vec![];
+        let mut normals: Vec<Vector> = vec![];
+        let mut uvs: Vec<UV> = vec![];
+        let mut indices: Vec<usize> = vec![];
+        let mut index = 0 as usize;
+        for face in mesh.tri_faces() {
+            for v in face.iter() {
+                let vertex_index = v.pos;
+                let normal_index = v.nor.unwrap();
+                let uv_index = v.uv.unwrap();
+                let vertex = mesh.positions()[vertex_index];
+                let normal = mesh.normals()[normal_index];
+                let uv = mesh.uv_coords()[uv_index];
+
+                let pt = Point::from_point3(vertex);
+                vertices.push(pt);
+                normals.push(Vector::from_vector3(normal));
+                uvs.push(UV { u: uv.x, v: uv.y });
+                indices.push(index);
+
+                index += 1;
+            }
         }
+
+        Mesh {
+            vertices,
+            normals,
+            uvs,
+            indices,
+        }
+
+        // Mesh {
+        //     vertices: mesh
+        //         .positions()
+        //         .iter()
+        //         .map(|p| Point::from_point3(*p))
+        //         .collect(),
+        //     normals: mesh
+        //         .normals()
+        //         .iter()
+        //         .map(|n| Vector::from_vector3(*n))
+        //         .collect(),
+        //     uvs: mesh
+        //         .uv_coords()
+        //         .iter()
+        //         .map(|uv| UV { u: uv.x, v: uv.y })
+        //         .collect(),
+        //     indices: mesh
+        //         .tri_faces()
+        //         .iter()
+        //         .flat_map(|tri| tri.iter().map(|v| v.pos))
+        //         .collect(),
+        // }
     }
 
     pub fn save_as_obj(&self, filename: &str) {

@@ -39,10 +39,16 @@ impl Workbench {
     }
 
     pub fn add_sketch_and_extrusion(&mut self) {
-        let a = Point2D::new(-0.3, 0.0, "A");
-        let b = Point2D::new(0.3, 0.0, "B");
-        let c = Point2D::new(0.0, 0.3, "C");
-        let segments = Segment::link(vec![a, b, c], true);
+        // let a = Point2D::new(0.0, 0.0, "A");
+        // let b = Point2D::new(0.0, 0.5, "B");
+        // let c = Point2D::new(0.5, 0.5, "C");
+        // let d = Point2D::new(0.5, 0.0, "D");
+        let a = Point2D::new(-0.25, -0.25, "A");
+        let b = Point2D::new(-0.25, 0.25, "B");
+        let c = Point2D::new(0.25, 0.25, "C");
+        let d = Point2D::new(0.25, -0.25, "D");
+        // let e = Point2D::new(0.25, -0.25, "E");
+        let segments = Segment::link(vec![a, b, c, d], true);
         let mut sketch1 = Sketch::new();
         sketch1.add_segments(segments);
         self.add_sketch("Sketch 1", sketch1, "Top");

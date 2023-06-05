@@ -1,18 +1,25 @@
 import './App.css'
 import React, { useCallback, useEffect, useRef, useState } from 'react'
 import { Canvas, useFrame } from '@react-three/fiber'
-import { CameraControls } from '@react-three/drei'
+import { CameraControls, Environment, useHelper, Text } from '@react-three/drei'
 import * as THREE from 'three'
+import studio_2_1k from './images/studio_2_1k.hdr'
+// import { VertexNormalsHelper } from "three/examples/jsm/helpers/VertexNormalsHelper";
 
 import { useThree } from '@react-three/fiber'
 
 function WorkbenchPane({ workbenchView }) {
 
   console.log("My workbenchview: ", workbenchView);
-  let first_solid_mesh = null;
+  let parts = null;
   if (workbenchView) {
-    first_solid_mesh = workbenchView.solids[0].get("solid").get_mesh();
-    // console.log(first_solid_mesh.get_mesh());
+    // parts = workbenchView.solids[0].get("solid").get_mesh();
+    parts = workbenchView.solids.map((solid) => solid.get("solid").get_mesh());
+  }
+  let planes = null;
+  if (workbenchView) {
+    // planes = workbenchView.planes.map((plane) => plane.get("plane").get_mesh());
+    planes = workbenchView.planes;
   }
   const mouseConfig = useCallback((camControls) => {
     if (camControls !== null) {
@@ -32,25 +39,41 @@ function WorkbenchPane({ workbenchView }) {
   const overallScale = 1.1;
 
   return (
-    <Canvas camera={{ fov: 45, position: [1 * overallScale, 2 * overallScale, 1 * overallScale], up: [0, 0, 1] }} style={{ height: 600 }}>
+    <Canvas camera={{ fov: 35, position: [1 * overallScale, 1 * overallScale, 1 * overallScale], up: [0, 0, 1] }} style={{ height: 600 }}>
+      <Environment files={studio_2_1k} />
+
       <CameraControls ref={mouseConfig} />
       <ambientLight />
-      <pointLight position={[10, 10, 10]} />
+      <pointLight position={[-5, -5, 5]} />
+      <pointLight position={[5, 5, 5]} />
 
-      <Solid mesh={first_solid_mesh}></Solid>
+      {parts && parts.map((part, index) => {
+        return <Part key={index} mesh={part}></Part>
+      })}
+
+      {planes && planes.map((plane, index) => {
+        return <Plane key={index} plane={plane}></Plane>
+      })}
       <axesHelper></axesHelper>
     </Canvas>
   )
 }
 
-function Solid({ mesh }) {
+function Part({ mesh }) {
+  return <>
+    <Solid mesh={mesh} style="solid"></Solid>
+    <Wireframe mesh={mesh}></Wireframe>
+  </>
+}
+
+function Solid({ mesh, style }) {
   const ref = useRef()
+  // useHelper(ref, VertexNormalsHelper, .3, "green");
   const [hovered, hover] = useState(false)
   const positions = new Float32Array(mesh.vertices.flatMap((v) => [v.x, v.y, v.z]));
   const normals = new Float32Array(mesh.normals.flatMap((v) => [v.x, v.y, v.z]));
   const indices = new Uint16Array(mesh.indices);
 
-  console.log("as simple:", indices);
   return (
     <mesh
       ref={ref}
@@ -77,31 +100,84 @@ function Solid({ mesh }) {
           itemSize={1}
         />
       </bufferGeometry>
+      {style === "solid" && <meshStandardMaterial
+        metalness={0.75}
+        roughness={0.17}
+        color={hovered ? 'hotpink' : '#e30022'}
+        side={THREE.DoubleSide}
+      />}
+
+      {style === "plane" && <meshStandardMaterial
+        color="#ff0000" opacity={0.1} transparent
+        side={THREE.DoubleSide}
+      />}
+
+
+      {/* <meshNormalMaterial
+        color={hovered ? 'hotpink' : '#5cffb7'}
+        side={THREE.DoubleSide}
+      /> */}
+      {/* <VertexNormalsHelper args={[ref, 0.2, 0x00ff00, 1]}></VertexNormalsHelper> */}
+    </mesh>
+  )
+}
+
+function Wireframe({ mesh }) {
+  const ref = useRef()
+  const [hovered, hover] = useState(false)
+  const positions = new Float32Array(mesh.vertices.flatMap((v) => [v.x, v.y, v.z]));
+  const normals = new Float32Array(mesh.normals.flatMap((v) => [v.x, v.y, v.z]));
+  const indices = new Uint16Array(mesh.indices);
+
+  const geometry = new THREE.BufferGeometry();
+  geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+  geometry.setAttribute('normal', new THREE.BufferAttribute(normals, 3));
+  geometry.setIndex(new THREE.BufferAttribute(indices, 1));
+  const edges = new THREE.EdgesGeometry(geometry, 5);
+  const line = new THREE.LineSegments(edges, new THREE.LineBasicMaterial({ color: 0x000000 }));
+
+  return (
+    <mesh
+      ref={ref}
+      onPointerOver={(event) => hover(false)}
+      onPointerOut={(event) => hover(false)}
+    >
+      <lineSegments geometry={edges} material={line.material} />
       <meshStandardMaterial
-        color={hovered ? 'hotpink' : 'blue'}
+        polygonOffset={true}
+        polygonOffsetFactor={1} // positive value pushes polygon further away
+        polygonOffsetUnits={1}
+        color={hovered ? 'hotpink' : '#006B3C'}
         side={THREE.DoubleSide}
       />
     </mesh>
   )
 }
 
-function Plane(props) {
-  const ref = useRef()
-  const [hovered, hover] = useState(false)
-  return (
-    <mesh
-      {...props}
-      ref={ref}
-      onPointerOver={(event) => hover(false)}
-      onPointerOut={(event) => hover(false)}
+
+function Plane({ plane }) {
+  const actualPlane = plane.get("plane");
+  const mesh = actualPlane.get_mesh();
+  const name = plane.get("name");
+  const upperLeftPos = actualPlane.get_upper_left();
+  const upperLeftPosAry = [upperLeftPos.x, upperLeftPos.y, upperLeftPos.z];
+  const up = actualPlane.get_up();
+  const upAry = [up.x, up.y, up.z];
+  console.log(name, actualPlane.get_up());
+  return <>
+    <Solid mesh={mesh} style={"plane"} ></Solid>
+    <Wireframe mesh={mesh}></Wireframe>
+    <Text
+      scale={[.09, .09, .09]}
+      color="black" // default
+      anchorX="center" // default
+      anchorY="middle" // default
+      position={upperLeftPosAry}
+    // up={upAry}
     >
-      <planeGeometry args={[1, 1]} />
-      <meshStandardMaterial
-        color={hovered ? 'hotpink' : 'orange'}
-        side={THREE.DoubleSide}
-      />
-    </mesh>
-  )
+      {name}
+    </Text>
+  </>
 }
 
 function Box(props) {

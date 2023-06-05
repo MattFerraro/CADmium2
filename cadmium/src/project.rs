@@ -11,7 +11,7 @@ pub struct Project {
 }
 
 impl Project {
-    pub fn new(name: &str) -> Project {
+    pub fn new(name: &str, add_dummy_data: bool) -> Project {
         let mut p = Project {
             name: name.to_owned(),
             workbenches: vec![],
@@ -19,7 +19,11 @@ impl Project {
         };
 
         let mut bench0 = Workbench::new("Workbench 1");
-        bench0.add_sketch_and_extrusion();
+
+        if add_dummy_data {
+            bench0.add_sketch_and_extrusion();
+        }
+
         p.workbenches.push(bench0);
 
         p
@@ -32,5 +36,27 @@ impl Project {
             }
         }
         None
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_project() {
+        let p = Project::new("Project 1", true);
+        assert_eq!(p.name, "Project 1");
+        assert_eq!(p.workbenches.len(), 1);
+        assert_eq!(p.assemblies.len(), 0);
+    }
+
+    #[test]
+    fn test_project_makes_shapes() {
+        let p = Project::new("Project 1", true);
+        let wb = p.get_workbench("Workbench 1").unwrap();
+        let wbv = wb.create_view(100);
+        let solid = wbv.solids.get("Extrude 1_0").unwrap();
+        let as_mesh = solid.get_mesh();
     }
 }

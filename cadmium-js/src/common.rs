@@ -220,6 +220,21 @@ impl Plane {
     pub fn height(&self) -> f64 {
         self.0.height
     }
+
+    #[wasm_bindgen]
+    pub fn get_mesh(&self) -> Mesh {
+        Mesh(self.0.get_mesh())
+    }
+
+    #[wasm_bindgen]
+    pub fn get_upper_left(&self) -> Point {
+        Point(self.0.get_upper_left())
+    }
+
+    #[wasm_bindgen]
+    pub fn get_up(&self) -> Vector {
+        Vector(self.0.get_up())
+    }
 }
 
 impl Plane {
@@ -261,6 +276,36 @@ impl Mesh {
     #[wasm_bindgen(getter)]
     pub fn normals(&self) -> Array {
         let retval = Array::new();
+
+        // let mut index = 0;
+        // while index < self.0.indices.len() {
+        //     let a_idx = self.0.indices[index];
+        //     let b_idx = self.0.indices[index + 1];
+        //     let c_idx = self.0.indices[index + 2];
+
+        //     let a_x = self.0.vertices[a_idx].x;
+        //     let a_y = self.0.vertices[a_idx].y;
+        //     let a_z = self.0.vertices[a_idx].z;
+        //     let a_vec = cadmium::common::Vector::new(a_x, a_y, a_z);
+
+        //     let b_x = self.0.vertices[b_idx].x;
+        //     let b_y = self.0.vertices[b_idx].y;
+        //     let b_z = self.0.vertices[b_idx].z;
+        //     let b_vec = cadmium::common::Vector::new(b_x, b_y, b_z);
+
+        //     let c_x = self.0.vertices[c_idx].x;
+        //     let c_y = self.0.vertices[c_idx].y;
+        //     let c_z = self.0.vertices[c_idx].z;
+        //     let c_vec = cadmium::common::Vector::new(c_x, c_y, c_z);
+
+        //     let ab = b_vec.subtract(a_vec);
+        //     let ac = c_vec.subtract(a_vec);
+
+        //     let normal = ab.cross(ac).normalize();
+
+        //     index += 3;
+        // }
+
         for normal in self.0.normals.iter() {
             retval.push(&JsValue::from(Vector::wrap(*normal)));
         }
