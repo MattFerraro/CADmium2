@@ -1,6 +1,6 @@
 import './App.css'
 import React, { useRef, useState } from 'react'
-import { AppShell, Navbar, Header, Footer, Text, MediaQuery, Burger, useMantineTheme, Button, Tabs, ActionIcon } from '@mantine/core'
+import { Menu, AppShell, Navbar, Header, Footer, Text, MediaQuery, Burger, useMantineTheme, Button, Tabs, ActionIcon } from '@mantine/core'
 // import MainViewport from './MainViewport'
 import WorkbenchPane from './WorkbenchPane'
 import AssemblyPane from './AssemblyPane'
@@ -8,9 +8,11 @@ import extrude_min from './images/extrude_min.svg';
 import sketch_min from './images/sketch_min.svg';
 import point_min from './images/point_min.svg'
 import plane_min from './images/plane_min.svg'
+import cube_min from './images/cube_min.svg'
 import { act } from '@react-three/fiber';
 import logo from './logo.svg';
 // import { IconSettings } from '@tabler/icons-react';
+import { IconSettings, IconSearch, IconPhoto, IconMessageCircle, IconTrash, IconFileDownload } from '@tabler/icons-react';
 import { NewPointStep, NewPlaneStep, NewSketchStep, NewExtrudeStep } from "cadmium-js";
 
 
@@ -28,6 +30,8 @@ function MainWindow({ project }) {
   const workbench = project && project.get_workbench(activeTab);
   const steps = workbench && workbench.get_steps();
   const workbenchView = steps && workbench.create_view(1000);
+  const solids = workbenchView && workbenchView.solids;
+  console.log("solids:", solids);
 
   return (
     <AppShell
@@ -56,7 +60,23 @@ function MainWindow({ project }) {
           })}
 
           <hr style={{ width: "100%" }}></hr>
-          <Text>Solids</Text>
+          <Text>Geometry</Text>
+          {
+            solids && solids.map((solid, index) => {
+
+              let solid_name = solid.get("name")
+              let solid_obj = solid.get("solid")
+
+              let image = <img src={cube_min} width="30px"></img>;
+
+              return <GeometryElement
+                key={index}
+                image={image}
+                solid_name={solid_name}
+                solid_obj={solid_obj}
+              ></GeometryElement>
+            })
+          }
         </ Navbar>
       }
       // TODO: revive and put stuff here? if required.
@@ -122,6 +142,37 @@ function MainWindow({ project }) {
 
     </AppShell >
   )
+}
+
+function download(content, mimeType, filename) {
+  const a = document.createElement('a') // Create "a" element
+  const blob = new Blob([content], { type: mimeType }) // Create a blob (file-like object)
+  const url = URL.createObjectURL(blob) // Create an object URL from blob
+  a.setAttribute('href', url) // Set "a" element link
+  a.setAttribute('download', filename) // Set download filename
+  a.click() // Start downloading
+}
+
+function GeometryElement({ image, solid_name, solid_obj }) {
+  const onDownloadObj = () => {
+    download(solid_obj.get_obj_text(), "text/plain", solid_name + ".obj");
+  }
+
+  return <Menu withArrow>
+    <Menu.Target>
+      <div
+        className='geometry-element'
+        onContextMenu={(e) => {
+          e.preventDefault(); // prevent the default behaviour when right clicked
+          console.log("Right Click");
+        }}>{image}<Text>{solid_name}</Text>
+      </div>
+    </Menu.Target>
+    <Menu.Dropdown>
+      <Menu.Label>Application</Menu.Label>
+      <Menu.Item onClick={onDownloadObj} icon={<IconFileDownload size={16} />}>Download OBJ</Menu.Item>
+    </Menu.Dropdown >
+  </Menu >
 }
 
 export default MainWindow

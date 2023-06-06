@@ -47,6 +47,19 @@
   font-size: 1em;
 }
 
+.geometry-element {
+  display: flex;
+  flex-direction: row;
+  justify-content: left;
+  align-items: center;
+  font-size: 1em;
+}
+
+.geometry-element:hover {
+  background-color: #eeeeee;
+  cursor: pointer;
+}
+
 
 
 .header-row {

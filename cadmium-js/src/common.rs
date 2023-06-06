@@ -306,6 +306,11 @@ impl Solid {
     pub fn get_mesh(&self) -> Mesh {
         Mesh(self.0.get_mesh())
     }
+
+    #[wasm_bindgen]
+    pub fn get_obj_text(&self) -> String {
+        self.0.get_obj_text()
+    }
 }
 
 #[wasm_bindgen]

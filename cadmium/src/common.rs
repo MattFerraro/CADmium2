@@ -1,10 +1,10 @@
-#![allow(unused_variables)]
-#![allow(unused_imports)]
+// #![allow(unused_variables)]
+// #![allow(unused_imports)]
 
 use crate::sketch::Point as SketchPoint;
 use serde::{Deserialize, Serialize};
 use truck_meshalgo::prelude::*;
-use truck_modeling::{builder, Curve, Edge, Face, Point3, Vector3, Vertex, Wire};
+use truck_modeling::{builder, Edge, Face, Point3, Vector3, Vertex, Wire};
 
 #[derive(Serialize, Deserialize, Debug, Clone, Copy)]
 pub struct Point {
@@ -564,6 +564,16 @@ impl Solid {
         mesh.put_together_same_attrs();
         let file = std::fs::File::create(filename).unwrap();
         obj::write(&mesh, file).unwrap();
+    }
+
+    pub fn get_obj_text(&self) -> String {
+        let mut mesh = self.truck_solid.triangulation(0.001).to_polygon();
+        mesh.put_together_same_attrs();
+        // let mut text = String::new();
+        let mut buf = Vec::new();
+        obj::write(&mesh, &mut buf).unwrap();
+        let string = String::from_utf8(buf).unwrap();
+        string
     }
 }
 

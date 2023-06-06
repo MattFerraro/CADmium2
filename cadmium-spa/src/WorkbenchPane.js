@@ -10,15 +10,12 @@ import { useThree } from '@react-three/fiber'
 
 function WorkbenchPane({ workbenchView }) {
 
-  console.log("My workbenchview: ", workbenchView);
   let parts = null;
   if (workbenchView) {
-    // parts = workbenchView.solids[0].get("solid").get_mesh();
     parts = workbenchView.solids.map((solid) => solid.get("solid").get_mesh());
   }
   let planes = null;
   if (workbenchView) {
-    // planes = workbenchView.planes.map((plane) => plane.get("plane").get_mesh());
     planes = workbenchView.planes;
   }
   const mouseConfig = useCallback((camControls) => {
