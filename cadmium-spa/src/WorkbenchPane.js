@@ -39,7 +39,7 @@ function WorkbenchPane({ workbenchView }) {
   const overallScale = 1.1;
 
   return (
-    <Canvas camera={{ fov: 35, position: [1 * overallScale, 1 * overallScale, 1 * overallScale], up: [0, 0, 1] }} style={{ height: 600 }}>
+    <Canvas camera={{ fov: 35, position: [1 * overallScale, -1 * overallScale, 1 * overallScale], up: [0, 0, 1] }} style={{ height: 600 }}>
       <Environment files={studio_2_1k} />
 
       <CameraControls ref={mouseConfig} />
@@ -161,19 +161,28 @@ function Plane({ plane }) {
   const name = plane.get("name");
   const upperLeftPos = actualPlane.get_upper_left();
   const upperLeftPosAry = [upperLeftPos.x, upperLeftPos.y, upperLeftPos.z];
-  const up = actualPlane.get_up();
-  const upAry = [up.x, up.y, up.z];
-  console.log(name, actualPlane.get_up());
+  const matrix = actualPlane.get_rotation_matrix();
+
+  const x = new THREE.Vector3(matrix[0][0], matrix[0][1], matrix[0][2]);
+  const y = new THREE.Vector3(matrix[1][0], matrix[1][1], matrix[1][2]);
+  const z = new THREE.Vector3(matrix[2][0], matrix[2][1], matrix[2][2]);
+  const m = new THREE.Matrix4();
+  m.makeBasis(x, y, z);
+  const a = new THREE.Euler(0, 0, 0, 'XYZ');
+  a.setFromRotationMatrix(m, "XYZ");
+
+  const size = 0.05;
   return <>
     <Solid mesh={mesh} style={"plane"} ></Solid>
     <Wireframe mesh={mesh}></Wireframe>
     <Text
-      scale={[.09, .09, .09]}
+      scale={[size, size, size]}
       color="black" // default
-      anchorX="center" // default
-      anchorY="middle" // default
+      anchorX="left" // default
+      anchorY="top" // default
+      depthOffset={-1}
       position={upperLeftPosAry}
-    // up={upAry}
+      rotation={a}
     >
       {name}
     </Text>

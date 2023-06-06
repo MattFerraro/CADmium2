@@ -29,7 +29,7 @@ impl Workbench {
         let z_axis = Vector::new(0.0, 0.0, 1.0);
 
         let top = Plane::new(origin, x_axis, y_axis, z_axis);
-        let front = Plane::new(origin, z_axis, x_axis, y_axis);
+        let front = Plane::new(origin, x_axis, z_axis, y_axis.negate());
         let right = Plane::new(origin, y_axis, z_axis, x_axis);
         w.add_plane("Top", top);
         w.add_plane("Front", front);

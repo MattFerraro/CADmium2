@@ -99,6 +99,36 @@ impl Vector {
 }
 
 #[wasm_bindgen]
+#[derive(Clone)]
+pub struct Quaternion(cadmium::common::Quaternion);
+
+#[wasm_bindgen]
+impl Quaternion {
+    #[wasm_bindgen(constructor)]
+    pub fn new(x: f64, y: f64, z: f64, w: f64) -> Quaternion {
+        Quaternion(cadmium::common::Quaternion::new(x, y, z, w))
+    }
+
+    #[wasm_bindgen(getter)]
+    pub fn x(&self) -> f64 {
+        self.0.x
+    }
+    #[wasm_bindgen(getter)]
+    pub fn y(&self) -> f64 {
+        self.0.y
+    }
+    #[wasm_bindgen(getter)]
+    pub fn z(&self) -> f64 {
+        self.0.z
+    }
+
+    #[wasm_bindgen(getter)]
+    pub fn w(&self) -> f64 {
+        self.0.w
+    }
+}
+
+#[wasm_bindgen]
 #[derive(Clone, Debug)]
 pub struct CoordinateFrame(cadmium::common::CoordinateFrame);
 
@@ -234,6 +264,25 @@ impl Plane {
     #[wasm_bindgen]
     pub fn get_up(&self) -> Vector {
         Vector(self.0.get_up())
+    }
+
+    #[wasm_bindgen]
+    pub fn get_quaternion(&self) -> Quaternion {
+        Quaternion(self.0.get_quaternion())
+    }
+
+    #[wasm_bindgen]
+    pub fn get_rotation_matrix(&self) -> Array {
+        let retval = Array::new();
+        let matrix = self.0.get_rotation_matrix();
+        for row in matrix.iter() {
+            let row_array = Array::new();
+            for value in row.iter() {
+                row_array.push(&JsValue::from_f64(*value));
+            }
+            retval.push(&row_array);
+        }
+        retval
     }
 }
 

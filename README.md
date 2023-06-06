@@ -31,8 +31,7 @@ npm start
 
 Deploying the demo to Github pages:
 ```
-npm run build-web
-npm run deploy
+npm run build-web && npm run deploy
 ```
 
 As an Electron app:

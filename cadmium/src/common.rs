@@ -96,6 +96,10 @@ impl Vector {
         }
     }
 
+    pub fn dot(&self, other: Vector) -> f64 {
+        self.x * other.x + self.y * other.y + self.z * other.z
+    }
+
     pub fn normalize(&self) -> Self {
         let len = (self.x * self.x + self.y * self.y + self.z * self.z).sqrt();
         Vector {
@@ -103,6 +107,14 @@ impl Vector {
             y: self.y / len,
             z: self.z / len,
         }
+    }
+
+    pub fn length(&self) -> f64 {
+        (self.x * self.x + self.y * self.y + self.z * self.z).sqrt()
+    }
+
+    pub fn length_squared(&self) -> f64 {
+        self.x * self.x + self.y * self.y + self.z * self.z
     }
 
     pub fn subtract(&self, other: Vector) -> Self {
@@ -151,6 +163,39 @@ pub struct UV {
 impl UV {
     pub fn new(u: f64, v: f64) -> Self {
         UV { u, v }
+    }
+}
+
+#[derive(Clone, Copy)]
+pub struct Quaternion {
+    pub x: f64,
+    pub y: f64,
+    pub z: f64,
+    pub w: f64,
+}
+
+impl Quaternion {
+    pub fn new(x: f64, y: f64, z: f64, w: f64) -> Self {
+        Quaternion { x, y, z, w }
+    }
+
+    pub fn identity() -> Self {
+        Quaternion {
+            x: 0.0,
+            y: 0.0,
+            z: 0.0,
+            w: 1.0,
+        }
+    }
+
+    pub fn normalize(&self) -> Self {
+        let len = (self.x * self.x + self.y * self.y + self.z * self.z + self.w * self.w).sqrt();
+        Quaternion {
+            x: self.x / len,
+            y: self.y / len,
+            z: self.z / len,
+            w: self.w / len,
+        }
     }
 }
 
@@ -351,6 +396,42 @@ impl Plane {
         self.origin
             .add_vec(self.x_axis.scale(-self.width / 2.0))
             .add_vec(self.y_axis.scale(self.height / 2.0))
+    }
+
+    pub fn get_rotation_matrix(&self) -> Vec<Vec<f64>> {
+        let frame = self.frame;
+        let x_axis = frame.x_axis;
+        let y_axis = frame.y_axis;
+        let normal = frame.normal;
+
+        let m = vec![
+            vec![x_axis.x, x_axis.y, x_axis.z],
+            vec![y_axis.x, y_axis.y, y_axis.z],
+            vec![normal.x, normal.y, normal.z],
+        ];
+        m
+    }
+
+    pub fn get_quaternion(&self) -> Quaternion {
+        // the normal in the primary XYZ coordinate frame is the z axis:
+        let up = Vector::new(0.0, 0.0, 1.0);
+
+        // but the normal on this plane is given by frame.normal
+        // so we need to find the quaternion that rotates the z axis to the normal
+        let frame = self.frame;
+        let normal = frame.normal;
+
+        let dot = normal.dot(up);
+        // If the two vectors are already parallel, then the rotation is the identity
+        if dot > 0.999999 {
+            // 180 degree rotation around any orthogonal vector
+            return Quaternion::identity();
+        } else {
+            let a = normal.cross(up);
+            return Quaternion::new(a.x, a.y, a.z, 1.0 + dot).normalize();
+        }
+        // see https://github.com/toji/gl-matrix/blob/f0583ef53e94bc7e78b78c8a24f09ed5e2f7a20c/src/gl-matrix/quat.js#L54
+        // for a reference implementation
     }
 }
 
