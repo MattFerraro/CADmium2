@@ -36,13 +36,13 @@ function WorkbenchPane({ workbenchView }) {
   const overallScale = 1.1;
 
   return (
-    <Canvas camera={{ fov: 35, position: [1 * overallScale, -1 * overallScale, 1 * overallScale], up: [0, 0, 1] }} style={{ height: 600 }}>
+    <Canvas camera={{ fov: 35, position: [1 * overallScale, -1 * overallScale, 1 * overallScale], up: [0, 0, 1] }} style={{ height: '100%' }}>
       <Environment files={studio_2_1k} />
 
       <CameraControls ref={mouseConfig} />
       <ambientLight />
-      <pointLight position={[-5, -5, 5]} />
-      <pointLight position={[5, 5, 5]} />
+      <pointLight position={[5, -5, 5]} />
+      <pointLight position={[-5, 5, 5]} />
 
       {parts && parts.map((part, index) => {
         return <Part key={index} mesh={part}></Part>

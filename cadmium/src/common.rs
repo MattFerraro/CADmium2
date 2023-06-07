@@ -34,6 +34,14 @@ impl Point {
         }
     }
 
+    pub fn scale(&self, s: f64) -> Self {
+        Point {
+            x: self.x * s,
+            y: self.y * s,
+            z: self.z * s,
+        }
+    }
+
     pub fn to_vector(&self) -> Vector {
         Vector {
             x: self.x,
@@ -573,7 +581,25 @@ impl Solid {
         let mut buf = Vec::new();
         obj::write(&mesh, &mut buf).unwrap();
         let string = String::from_utf8(buf).unwrap();
-        string
+
+        fn scale_vertices(line: &str) -> String {
+            if line.starts_with("v ") {
+                let mut parts = line.split(" ");
+                let _ = parts.next();
+                let x = parts.next().unwrap().parse::<f64>().unwrap();
+                let y = parts.next().unwrap().parse::<f64>().unwrap();
+                let z = parts.next().unwrap().parse::<f64>().unwrap();
+                let pt = Point::new(x, y, z);
+                let scaled = pt.scale(100.0);
+                return format!("v {} {} {}\n", scaled.x, scaled.y, scaled.z);
+            } else {
+                return format!("{}\n", line);
+            }
+        }
+
+        let scaled: String = string.split("\n").map(scale_vertices).collect();
+
+        scaled
     }
 }
 
