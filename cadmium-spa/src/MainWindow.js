@@ -1,6 +1,7 @@
 import './App.css'
 import React, { useRef, useState } from 'react'
-import { Menu, AppShell, Navbar, Header, Footer, Text, MediaQuery, Burger, useMantineTheme, Button, Tabs, ActionIcon } from '@mantine/core'
+import { useDisclosure } from '@mantine/hooks';
+import { Collapse, Group, Menu, AppShell, Navbar, Header, Footer, Text, MediaQuery, Burger, useMantineTheme, Button, Tabs, ActionIcon } from '@mantine/core'
 // import MainViewport from './MainViewport'
 import WorkbenchPane from './WorkbenchPane'
 import AssemblyPane from './AssemblyPane'
@@ -25,6 +26,7 @@ function MainWindow({ project }) {
   const [opened, setOpened] = useState(false);
   const theme = useMantineTheme();
   const [activeTab, setActiveTab] = useState('Workbench 1');
+  const [activeTabLeft, setActiveTabLeft] = useState('Geometry');
 
 
   const workbench = project && project.get_workbench(activeTab);
@@ -42,25 +44,11 @@ function MainWindow({ project }) {
         <Navbar p="md" hiddenBreakpoint="sm" hidden={!opened} width={{ sm: 200, lg: 300 }}>
           <Text>History</Text>
           {steps && steps.map((step, index) => {
-            let image = null;
-            if (step instanceof NewPointStep) {
-              image = <img src={point_min} width="30px"></img>
-            }
-            else if (step instanceof NewPlaneStep) {
-              image = <img src={plane_min} width="30px"></img>
-            }
-            else if (step instanceof NewSketchStep) {
-              image = <img src={sketch_min} width="30px"></img>
-            }
-            else if (step instanceof NewExtrudeStep) {
-              image = <img src={extrude_min} width="30px"></img>
-            }
-
-            return <div className='history-element' key={index}>{image}<Text>{step.name}</Text></div>
+            return <HistoryElement key={index} step={step}></HistoryElement>
           })}
 
           <hr style={{ width: "100%" }}></hr>
-          <Text>Geometry</Text>
+
           {
             solids && solids.map((solid, index) => {
 
@@ -77,6 +65,18 @@ function MainWindow({ project }) {
               ></GeometryElement>
             })
           }
+
+          {/* <Tabs value={activeTabLeft} onTabChange={setActiveTabLeft}>
+            <Tabs.List>
+              <Tabs.Tab value="Geometry">Geometry</Tabs.Tab>
+              <Tabs.Tab value="Options">Options</Tabs.Tab>
+            </Tabs.List>
+
+            <Tabs.Panel value="Geometry">
+              Geometry content
+            </Tabs.Panel>
+            <Tabs.Panel value="Options">Options content</Tabs.Panel>
+          </Tabs> */}
         </ Navbar>
       }
       // TODO: revive and put stuff here? if required.
@@ -171,6 +171,76 @@ function GeometryElement({ image, solid_name, solid_obj }) {
     <Menu.Dropdown>
       <Menu.Label>Application</Menu.Label>
       <Menu.Item onClick={onDownloadObj} icon={<IconFileDownload size={16} />}>Download OBJ</Menu.Item>
+    </Menu.Dropdown >
+  </Menu >
+}
+
+function HistoryElement({ step }) {
+  const [opened, setOpened] = useState(false);
+  const [optionsOpened, { open, close }] = useDisclosure(false);
+  const theme = useMantineTheme();
+
+  let image = <img alt={"Nothing"} width="30px"></img>;
+  if (step instanceof NewPointStep) {
+    image = <img alt={"A Point"} src={point_min} width="30px"></img>
+  }
+  else if (step instanceof NewPlaneStep) {
+    image = <img alt={"A Plane"} src={plane_min} width="30px"></img>
+  }
+  else if (step instanceof NewSketchStep) {
+    image = <img alt={"A Sketch"} src={sketch_min} width="30px"></img>
+  }
+  else if (step instanceof NewExtrudeStep) {
+    image = <img alt={"An Extrusion"} src={extrude_min} width="30px"></img>
+  }
+
+  function onDoubleClick(e) {
+    e.preventDefault();
+    console.log("doub click");
+    if (optionsOpened) {
+      close();
+    } else {
+      open();
+    }
+  }
+
+  function onCloseMenu() {
+    console.log("close menu");
+    setOpened(false);
+  }
+
+  function onRightClick(e) {
+    console.log("right click");
+    e.preventDefault();
+  }
+
+  return <Menu withArrow opened={opened} onClose={onCloseMenu}>
+    <Menu.Target>
+      <div>
+        <div
+          onDoubleClick={onDoubleClick}
+          onContextMenu={onRightClick}
+          className='history-element' >
+          {image}
+          <Text>{step.name}</Text>
+
+          {/* <Modal opened={modalOpened} onClose={close} title="Options"
+          overlayProps={{
+            color: theme.colorScheme === 'dark' ? theme.colors.dark[9] : theme.colors.gray[2],
+            opacity: 0.1,
+            blur: 2,
+          }}>
+          Modal Content
+        </Modal> */}
+        </div>
+        <Collapse in={optionsOpened}>
+          <Text>Some stuff!</Text>
+        </Collapse>
+      </div>
+    </Menu.Target>
+    <Menu.Dropdown>
+      <Menu.Label>Application</Menu.Label>
+      <Menu.Item icon={<IconFileDownload size={16} />}>Download OBJ</Menu.Item>
     </Menu.Dropdown >
   </Menu >
 }

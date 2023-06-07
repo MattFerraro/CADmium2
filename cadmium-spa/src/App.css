@@ -45,6 +45,17 @@
   justify-content: left;
   align-items: center;
   font-size: 1em;
+  -ms-user-select: none;
+  -moz-user-select: none;
+  -webkit-user-select: none;
+  -webkit-touch-callout: none;
+  -khtml-user-select: none;
+  user-select: none;
+}
+
+.history-element:hover {
+  background-color: #eeeeee;
+  cursor: pointer;
 }
 
 .geometry-element {
@@ -53,6 +64,12 @@
   justify-content: left;
   align-items: center;
   font-size: 1em;
+  -ms-user-select: none;
+  -moz-user-select: none;
+  -webkit-user-select: none;
+  -webkit-touch-callout: none;
+  -khtml-user-select: none;
+  user-select: none;
 }
 
 .geometry-element:hover {
