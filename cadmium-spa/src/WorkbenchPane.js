@@ -20,8 +20,8 @@ function WorkbenchPane({ workbenchView }) {
   }
   const mouseConfig = useCallback((camControls) => {
     if (camControls !== null) {
-      camControls.mouseButtons.middle = 8
-      camControls.mouseButtons.wheel = 8
+      camControls.mouseButtons.middle = 16
+      camControls.mouseButtons.wheel = 16
       camControls.mouseButtons.right = 1
       camControls.mouseButtons.left = 0
     }
@@ -30,16 +30,17 @@ function WorkbenchPane({ workbenchView }) {
     // 	TRUCK: 2,
     // 	OFFSET: 4,
     // 	DOLLY: 8,
+    //  ZOOM: 16,
     // see https://github.com/yomotsu/camera-controls/blob/29eac5b50e69f0cf6792b8c3c12f5c86ad621222/src/types.ts
   }, [])
 
   const overallScale = 100;
 
   return (
-    <Canvas camera={{ far: 10000, fov: 35, position: [1 * overallScale, -1 * overallScale, 1 * overallScale], up: [0, 0, 1] }} style={{ height: '100%' }}>
+    <Canvas orthographic camera={{ far: 10000, zoom: 4.0, fov: 35, position: [1 * overallScale, -1 * overallScale, 1 * overallScale], up: [0, 0, 1] }} style={{ height: '100%' }}>
       <Environment files={studio_2_1k} />
 
-      <CameraControls ref={mouseConfig} />
+      <CameraControls ref={mouseConfig} dollyToCursor={true} maxPolarAngle={900} />
       <ambientLight />
       <pointLight position={[5 * overallScale, -5 * overallScale, 5 * overallScale]} />
       <pointLight position={[-5 * overallScale, 5 * overallScale, 5 * overallScale]} />
