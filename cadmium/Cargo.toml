@@ -8,6 +8,7 @@ edition = "2021"
 [dependencies]
 truck-modeling = "0.5.1"
 truck-meshalgo = "0.3.0"
+truck-stepio = "0.2.0"
 num-complex = "0.4.3"
 geo = "0.24.1"
 serde = { version = "1.0", features = ["derive"] }

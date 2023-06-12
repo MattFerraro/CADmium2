@@ -311,6 +311,11 @@ impl Solid {
     pub fn get_obj_text(&self) -> String {
         self.0.get_obj_text()
     }
+
+    #[wasm_bindgen]
+    pub fn get_step_text(&self) -> String {
+        self.0.get_step_text()
+    }
 }
 
 #[wasm_bindgen]

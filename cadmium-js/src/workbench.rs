@@ -47,12 +47,15 @@ impl Workbench {
                 }
                 cad_workbench::Step::Extrusion {
                     name,
-                    extrusion: _,
+                    extrusion: ext,
                     sketch: _,
                     faces: _,
                 } => {
                     let new_extrude_step = NewExtrudeStep {
                         name: name.to_owned(),
+                        depth: ext.depth,
+                        direction: ext.direction,
+                        operation: ext.operation.to_string(),
                     };
                     retval.push(&JsValue::from(new_extrude_step));
                 }
@@ -116,6 +119,9 @@ impl NewSketchStep {
 #[wasm_bindgen]
 pub struct NewExtrudeStep {
     name: String,
+    pub depth: f64,
+    direction: cadmium::common::Vector,
+    operation: String,
 }
 #[wasm_bindgen]
 impl NewExtrudeStep {
@@ -123,6 +129,22 @@ impl NewExtrudeStep {
     pub fn name(&self) -> String {
         self.name.to_owned()
     }
+
+    #[wasm_bindgen(getter)]
+    pub fn direction(&self) -> crate::common::Vector {
+        crate::common::Vector::wrap(self.direction)
+    }
+
+    #[wasm_bindgen(getter)]
+    pub fn operation(&self) -> String {
+        self.operation.to_owned()
+    }
+
+    // #[wasm_bindgen(setter)]
+    // pub fn set_depth(&mut self, depth: f64) {
+    //     self.depth = depth;
+    //     // self.0.depth = depth;
+    // }
 }
 
 #[wasm_bindgen]

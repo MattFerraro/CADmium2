@@ -33,16 +33,16 @@ function WorkbenchPane({ workbenchView }) {
     // see https://github.com/yomotsu/camera-controls/blob/29eac5b50e69f0cf6792b8c3c12f5c86ad621222/src/types.ts
   }, [])
 
-  const overallScale = 1.1;
+  const overallScale = 100;
 
   return (
-    <Canvas camera={{ fov: 35, position: [1 * overallScale, -1 * overallScale, 1 * overallScale], up: [0, 0, 1] }} style={{ height: '100%' }}>
+    <Canvas camera={{ far: 10000, fov: 35, position: [1 * overallScale, -1 * overallScale, 1 * overallScale], up: [0, 0, 1] }} style={{ height: '100%' }}>
       <Environment files={studio_2_1k} />
 
       <CameraControls ref={mouseConfig} />
       <ambientLight />
-      <pointLight position={[5, -5, 5]} />
-      <pointLight position={[-5, 5, 5]} />
+      <pointLight position={[5 * overallScale, -5 * overallScale, 5 * overallScale]} />
+      <pointLight position={[-5 * overallScale, 5 * overallScale, 5 * overallScale]} />
 
       {parts && parts.map((part, index) => {
         return <Part key={index} mesh={part}></Part>
@@ -168,7 +168,7 @@ function Plane({ plane }) {
   const a = new THREE.Euler(0, 0, 0, 'XYZ');
   a.setFromRotationMatrix(m, "XYZ");
 
-  const size = 0.05;
+  const size = 5;
   return <>
     <Solid mesh={mesh} style={"plane"} ></Solid>
     <Wireframe mesh={mesh}></Wireframe>

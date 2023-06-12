@@ -1,7 +1,7 @@
 import './App.css'
 import React, { useRef, useState } from 'react'
 import { useDisclosure } from '@mantine/hooks';
-import { Collapse, Group, Menu, AppShell, Navbar, Header, Footer, Text, MediaQuery, Burger, useMantineTheme, Button, Tabs, ActionIcon } from '@mantine/core'
+import { NumberInput, Collapse, Group, Menu, AppShell, Navbar, Header, Footer, Text, MediaQuery, Burger, useMantineTheme, Button, Tabs, ActionIcon } from '@mantine/core'
 // import MainViewport from './MainViewport'
 import WorkbenchPane from './WorkbenchPane'
 import AssemblyPane from './AssemblyPane'
@@ -26,12 +26,18 @@ function MainWindow({ project }) {
   const [opened, setOpened] = useState(false);
   const theme = useMantineTheme();
   const [activeTab, setActiveTab] = useState('Workbench 1');
-  const [activeTabLeft, setActiveTabLeft] = useState('Geometry');
+  const [activeStep, setActiveStep] = useState(null);
+  // const [activeTabLeft, setActiveTabLeft] = useState('Geometry');
 
 
   const workbench = project && project.get_workbench(activeTab);
   const steps = workbench && workbench.get_steps();
-  const workbenchView = steps && workbench.create_view(1000);
+  let workbenchView = null;
+  if (activeStep !== null) {
+    workbenchView = steps && workbench.create_view(activeStep + 1);
+  } else {
+    workbenchView = steps && workbench.create_view(1000);
+  }
   const solids = workbenchView && workbenchView.solids;
   console.log("solids:", solids);
 
@@ -44,7 +50,12 @@ function MainWindow({ project }) {
         <Navbar p="md" hiddenBreakpoint="sm" hidden={!opened} width={{ sm: 200, lg: 300 }}>
           <Text>History</Text>
           {steps && steps.map((step, index) => {
-            return <HistoryElement key={index} step={step}></HistoryElement>
+            return <HistoryElement
+              key={index}
+              setIsActive={() => setActiveStep(index)}
+              setNotActive={() => setActiveStep(null)}
+              step={step}>
+            </HistoryElement>
           })}
 
           <hr style={{ width: "100%" }}></hr>
@@ -158,6 +169,10 @@ function GeometryElement({ image, solid_name, solid_obj }) {
     download(solid_obj.get_obj_text(), "text/plain", solid_name + ".obj");
   }
 
+  const onDownloadStep = () => {
+    download(solid_obj.get_step_text(), "text/plain", solid_name + ".step");
+  }
+
   return <Menu withArrow>
     <Menu.Target>
       <div
@@ -171,11 +186,12 @@ function GeometryElement({ image, solid_name, solid_obj }) {
     <Menu.Dropdown>
       <Menu.Label>Application</Menu.Label>
       <Menu.Item onClick={onDownloadObj} icon={<IconFileDownload size={16} />}>Download OBJ</Menu.Item>
+      <Menu.Item onClick={onDownloadStep} icon={<IconFileDownload size={16} />}>Download STEP</Menu.Item>
     </Menu.Dropdown >
   </Menu >
 }
 
-function HistoryElement({ step }) {
+function HistoryElement({ step, setIsActive, setNotActive }) {
   const [opened, setOpened] = useState(false);
   const [optionsOpened, { open, close }] = useDisclosure(false);
   const theme = useMantineTheme();
@@ -196,11 +212,13 @@ function HistoryElement({ step }) {
 
   function onDoubleClick(e) {
     e.preventDefault();
-    console.log("doub click");
+    console.log("doub click on ");
     if (optionsOpened) {
       close();
+      setNotActive();
     } else {
       open();
+      setIsActive();
     }
   }
 
@@ -213,6 +231,31 @@ function HistoryElement({ step }) {
     console.log("right click");
     e.preventDefault();
   }
+
+  let optionsForm = <div><Text>Options</Text></div>
+
+
+  if (step instanceof NewExtrudeStep) {
+    console.log("is extrusion: ", step);
+    optionsForm = <div className='options-form'>
+      <div className='options-form-element'>
+        <NumberInput
+          defaultValue={.2}
+          placeholder="Depth"
+          label="Depth"
+          precision={3}
+          size="md"
+          hideControls
+        />
+      </div>
+      <div className='options-form-element'>
+        <Button size='sm'>
+          Save
+        </Button>
+      </div>
+    </div>
+  }
+
 
   return <Menu withArrow opened={opened} onClose={onCloseMenu}>
     <Menu.Target>
@@ -234,7 +277,7 @@ function HistoryElement({ step }) {
         </Modal> */}
         </div>
         <Collapse in={optionsOpened}>
-          <Text>Some stuff!</Text>
+          {optionsForm}
         </Collapse>
       </div>
     </Menu.Target>

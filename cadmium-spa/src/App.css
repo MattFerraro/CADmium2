@@ -72,6 +72,23 @@
   user-select: none;
 }
 
+.options-form {
+  display: flex;
+  flex-direction: column;
+  justify-content: left;
+  align-items: left;
+  font-size: 1em;
+  padding: 5px;
+}
+
+.options-form-element {
+  display: flex;
+  flex: 1;
+  width: 100%;
+  font-size: 1em;
+  padding: 10px;
+}
+
 .geometry-element:hover {
   background-color: #eeeeee;
   cursor: pointer;

@@ -5,6 +5,7 @@ use crate::sketch::Point as SketchPoint;
 use serde::{Deserialize, Serialize};
 use truck_meshalgo::prelude::*;
 use truck_modeling::{builder, Edge, Face, Point3, Vector3, Vertex, Wire};
+use truck_stepio::out;
 
 #[derive(Serialize, Deserialize, Debug, Clone, Copy)]
 pub struct Point {
@@ -321,8 +322,8 @@ impl Plane {
                 y_axis: y,
                 normal,
             },
-            width: 1.0,
-            height: 1.0,
+            width: 150.0,
+            height: 150.0,
         }
     }
 
@@ -581,25 +582,44 @@ impl Solid {
         let mut buf = Vec::new();
         obj::write(&mesh, &mut buf).unwrap();
         let string = String::from_utf8(buf).unwrap();
+        string
+        // fn scale_vertices(line: &str) -> String {
+        //     if line.starts_with("v ") {
+        //         let mut parts = line.split(" ");
+        //         let _ = parts.next();
+        //         let x = parts.next().unwrap().parse::<f64>().unwrap();
+        //         let y = parts.next().unwrap().parse::<f64>().unwrap();
+        //         let z = parts.next().unwrap().parse::<f64>().unwrap();
+        //         let pt = Point::new(x, y, z);
+        //         let scaled = pt.scale(100.0);
+        //         return format!("v {} {} {}\n", scaled.x, scaled.y, scaled.z);
+        //     } else {
+        //         return format!("{}\n", line);
+        //     }
+        // }
 
-        fn scale_vertices(line: &str) -> String {
-            if line.starts_with("v ") {
-                let mut parts = line.split(" ");
-                let _ = parts.next();
-                let x = parts.next().unwrap().parse::<f64>().unwrap();
-                let y = parts.next().unwrap().parse::<f64>().unwrap();
-                let z = parts.next().unwrap().parse::<f64>().unwrap();
-                let pt = Point::new(x, y, z);
-                let scaled = pt.scale(100.0);
-                return format!("v {} {} {}\n", scaled.x, scaled.y, scaled.z);
-            } else {
-                return format!("{}\n", line);
-            }
-        }
+        // let scaled: String = string.split("\n").map(scale_vertices).collect();
 
-        let scaled: String = string.split("\n").map(scale_vertices).collect();
+        // scaled
+    }
 
-        scaled
+    pub fn get_step_text(&self) -> String {
+        let compressed = self.truck_solid.compress();
+        let step_string = out::CompleteStepDisplay::new(
+            out::StepModel::from(&compressed),
+            out::StepHeaderDescriptor {
+                origination_system: "shape-to-step".to_owned(),
+                ..Default::default()
+            },
+        )
+        .to_string();
+        step_string
+    }
+
+    pub fn save_as_step(&self, filename: &str) {
+        let step_text = self.get_step_text();
+        let mut step_file = std::fs::File::create(filename).unwrap();
+        std::io::Write::write_all(&mut step_file, step_text.as_ref()).unwrap();
     }
 }
 

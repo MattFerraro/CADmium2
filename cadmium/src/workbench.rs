@@ -7,6 +7,7 @@ use crate::sketch::Point as Point2D;
 use crate::sketch::{Line, Segment, Sketch, SketchView};
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
+use std::fmt;
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct Workbench {
@@ -43,17 +44,20 @@ impl Workbench {
         // let b = Point2D::new(0.0, 0.5, "B");
         // let c = Point2D::new(0.5, 0.5, "C");
         // let d = Point2D::new(0.5, 0.0, "D");
-        let a = Point2D::new(-0.25, -0.25, "A");
-        let b = Point2D::new(-0.25, 0.25, "B");
-        let c = Point2D::new(0.25, 0.25, "C");
-        let d = Point2D::new(0.25, -0.25, "D");
+        let width = 150.0;
+        let depth = 75.0;
+        let height = 20.0;
+        let a = Point2D::new(-width / 2.0, -depth / 2.0, "A");
+        let b = Point2D::new(-width / 2.0, depth / 2.0, "B");
+        let c = Point2D::new(width / 2.0, depth / 2.0, "C");
+        let d = Point2D::new(width / 2.0, -depth / 2.0, "D");
         // let e = Point2D::new(0.25, -0.25, "E");
         let segments = Segment::link(vec![a, b, c, d], true);
         let mut sketch1 = Sketch::new();
         sketch1.add_segments(segments);
         self.add_sketch("Sketch 1", sketch1, "Top");
 
-        self.add_extrusion("Extrude 1", "Sketch 1", 0.2, vec![0], Operation::New);
+        self.add_extrusion("Extrude 1", "Sketch 1", height, vec![0], Operation::New);
     }
 
     pub fn add_point(&mut self, name: &str, p: Point) {
@@ -226,6 +230,16 @@ pub enum Operation {
     Remove,
 }
 
+impl fmt::Display for Operation {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            Operation::New => write!(f, "New"),
+            Operation::Add => write!(f, "Add"),
+            Operation::Remove => write!(f, "Remove"),
+        }
+    }
+}
+
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct Extrusion {
     pub depth: f64,
@@ -296,16 +310,16 @@ mod tests {
     fn test_square_with_hole() {
         let mut wb = Workbench::new("wb");
 
-        let a = Point2D::new(-1.0, -1.0, "A");
-        let b = Point2D::new(1.0, -1.0, "B");
-        let c = Point2D::new(1.0, 1.0, "C");
-        let d = Point2D::new(-1.0, 1.0, "D");
+        let a = Point2D::new(-100.0, -100.0, "A");
+        let b = Point2D::new(100.0, -100.0, "B");
+        let c = Point2D::new(100.0, 100.0, "C");
+        let d = Point2D::new(-100.0, 100.0, "D");
         let mut segments_0 = Segment::link(vec![a, b, c, d], true);
 
-        let e = Point2D::new(-2.0, -2.0, "E");
-        let f = Point2D::new(2.0, -2.0, "F");
-        let g = Point2D::new(2.0, 2.0, "G");
-        let h = Point2D::new(-2.0, 2.0, "H");
+        let e = Point2D::new(-200.0, -200.0, "E");
+        let f = Point2D::new(200.0, -200.0, "F");
+        let g = Point2D::new(200.0, 200.0, "G");
+        let h = Point2D::new(-200.0, 200.0, "H");
         let segments_1 = Segment::link(vec![e, f, g, h], true);
 
         segments_0.extend(segments_1);
@@ -314,7 +328,7 @@ mod tests {
         sketch1.add_segments(segments_0);
 
         wb.add_sketch("sketch1", sketch1, "Front");
-        wb.add_extrusion("ext1", "sketch1", 4.0, vec![1], Operation::New);
+        wb.add_extrusion("ext1", "sketch1", 200.0, vec![1], Operation::New);
 
         let wbv = wb.create_view(100);
 
@@ -322,5 +336,6 @@ mod tests {
         let as_mesh = solid.get_mesh();
 
         solid.save_as_obj("test1.obj");
+        solid.save_as_step("test1.step");
     }
 }
