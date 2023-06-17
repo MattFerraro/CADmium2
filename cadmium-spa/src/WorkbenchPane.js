@@ -1,7 +1,7 @@
 import './App.css'
 import React, { useCallback, useEffect, useRef, useState } from 'react'
 import { Canvas, useFrame } from '@react-three/fiber'
-import { CameraControls, Environment, useHelper, Text } from '@react-three/drei'
+import { CameraControls, Environment, useHelper, Text, Line } from '@react-three/drei'
 import * as THREE from 'three'
 import studio_2_1k from './images/studio_2_1k.hdr'
 // import { VertexNormalsHelper } from "three/examples/jsm/helpers/VertexNormalsHelper";
@@ -18,6 +18,12 @@ function WorkbenchPane({ workbenchView }) {
   if (workbenchView) {
     planes = workbenchView.planes;
   }
+  let sketches = null;
+  if (workbenchView) {
+    sketches = workbenchView.sketches;
+    console.log("sketches:", sketches);
+  }
+
   const mouseConfig = useCallback((camControls) => {
     if (camControls !== null) {
       camControls.mouseButtons.middle = 16
@@ -37,13 +43,17 @@ function WorkbenchPane({ workbenchView }) {
   const overallScale = 100;
 
   return (
-    <Canvas orthographic camera={{ far: 10000, zoom: 4.0, fov: 35, position: [1 * overallScale, -1 * overallScale, 1 * overallScale], up: [0, 0, 1] }} style={{ height: '100%' }}>
-      <Environment files={studio_2_1k} />
+    <Canvas linear={true} frameloop='always' orthographic camera={{ far: 50000, near: 0.0, zoom: 4.0, position: [1 * overallScale, -1 * overallScale, 1 * overallScale], up: [0, 0, 1] }} style={{ height: '100%' }}>
+      {/* <Environment files={studio_2_1k} /> */}
 
       <CameraControls ref={mouseConfig} dollyToCursor={true} maxPolarAngle={900} />
       <ambientLight />
+      <pointLight position={[5 * overallScale, 5 * overallScale, 5 * overallScale]} />
       <pointLight position={[5 * overallScale, -5 * overallScale, 5 * overallScale]} />
       <pointLight position={[-5 * overallScale, 5 * overallScale, 5 * overallScale]} />
+      <pointLight position={[-5 * overallScale, -5 * overallScale, 5 * overallScale]} />
+
+      <pointLight position={[0 * overallScale, 0 * overallScale, -5 * overallScale]} />
 
       {parts && parts.map((part, index) => {
         return <Part key={index} mesh={part}></Part>
@@ -52,15 +62,66 @@ function WorkbenchPane({ workbenchView }) {
       {planes && planes.map((plane, index) => {
         return <Plane key={index} plane={plane}></Plane>
       })}
-      <axesHelper></axesHelper>
+
+      {sketches && sketches.map((sketch, index) => {
+        return <Sketch key={index} sketch={sketch}></Sketch>
+      })}
+
+      { }
+      {/* <axesHelper></axesHelper> */}
     </Canvas>
   )
 }
 
+function Sketch({ sketch }) {
+  const cx = 100
+  const cy = 100
+  const distance = 50
+  const sketchView = sketch.get("sketch");
+
+  for (const face of sketchView.faces) {
+    console.log("face:", face);
+  }
+
+  return <>
+    {sketchView && sketchView.segments.map((segment, index) => {
+      return <Line
+        key={index}
+        points={[
+          [segment.start.x, segment.start.y, segment.start.z],
+          [segment.end.x, segment.end.y, segment.end.z],
+        ]}
+        color={"#FF0000"}
+        lineWidth={2}
+      // segments  // If true, renders a THREE.LineSegments2. Otherwise, renders a THREE.Line2
+      />
+    })}
+
+    {sketchView && sketchView.faces.map((face, index) => {
+      for (const segment of face.exterior.segments) {
+
+      }
+
+      // const positions = new Float32Array(mesh.vertices.flatMap((v) => [v.x, v.y, v.z]));
+      // const normals = new Float32Array(mesh.normals.flatMap((v) => [v.x, v.y, v.z]));
+      // const indices = new Uint16Array(mesh.indices);
+
+      // const geometry = new THREE.BufferGeometry();
+      // geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+      // geometry.setAttribute('normal', new THREE.BufferAttribute(normals, 3));
+      // geometry.setIndex(new THREE.BufferAttribute(indices, 1));
+      return <mesh key={index}>
+
+      </mesh>
+    })}
+  </>
+
+}
+
 function Part({ mesh }) {
   return <>
-    <Solid mesh={mesh} style="solid"></Solid>
-    <Wireframe mesh={mesh}></Wireframe>
+    {/* <Solid mesh={mesh} style="solid"></Solid> */}
+    <Wireframe mesh={mesh} style="solid"></Wireframe>
   </>
 }
 
@@ -101,12 +162,12 @@ function Solid({ mesh, style }) {
       {style === "solid" && <meshStandardMaterial
         metalness={0.75}
         roughness={0.17}
-        color={hovered ? 'hotpink' : '#e30022'}
+        color={hovered ? 'hotpink' : '#006B3C'}
         side={THREE.DoubleSide}
       />}
 
       {style === "plane" && <meshStandardMaterial
-        color="#ff0000" opacity={0.1} transparent
+        color="#006B3C" opacity={0.1} transparent
         side={THREE.DoubleSide}
       />}
 
@@ -120,7 +181,7 @@ function Solid({ mesh, style }) {
   )
 }
 
-function Wireframe({ mesh }) {
+function Wireframe({ mesh, style }) {
   const ref = useRef()
   const [hovered, hover] = useState(false)
   const positions = new Float32Array(mesh.vertices.flatMap((v) => [v.x, v.y, v.z]));
@@ -131,26 +192,49 @@ function Wireframe({ mesh }) {
   geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
   geometry.setAttribute('normal', new THREE.BufferAttribute(normals, 3));
   geometry.setIndex(new THREE.BufferAttribute(indices, 1));
-  const edges = new THREE.EdgesGeometry(geometry, 5);
+  const edges = new THREE.EdgesGeometry(geometry, 0.05);
   const line = new THREE.LineSegments(edges, new THREE.LineBasicMaterial({ color: 0x000000 }));
 
   return (
-    <mesh
-      ref={ref}
-      onPointerOver={(event) => hover(false)}
-      onPointerOut={(event) => hover(false)}
-    >
-      <lineSegments geometry={edges} material={line.material} />
-      <meshStandardMaterial
-        polygonOffset={true}
-        polygonOffsetFactor={1} // positive value pushes polygon further away
-        polygonOffsetUnits={1}
-        color={hovered ? 'hotpink' : '#006B3C'}
-        side={THREE.DoubleSide}
-      />
-    </mesh>
+    <>
+      <mesh>
+        <primitive object={geometry} />
+        {style === "solid" && <meshStandardMaterial
+          metalness={0.0}
+          roughness={0.0}
+          color={hovered ? 'hotpink' : '#006B3C'}
+          side={THREE.DoubleSide}
+        />}
+
+        {style === "plane" && <meshStandardMaterial
+          color="#006B3C"
+          opacity={0.07}
+          transparent
+          depthWrite={false}
+          side={THREE.DoubleSide}
+          polygonOffset={true}
+          polygonOffsetFactor={1} // positive value pushes polygon further away
+          polygonOffsetUnits={1}
+        />}
+      </mesh>
+      <mesh
+        ref={ref}
+        onPointerOver={(event) => hover(false)}
+        onPointerOut={(event) => hover(false)}
+      >
+        <lineSegments geometry={edges} material={line.material} />
+        <meshStandardMaterial
+          polygonOffset={true}
+          polygonOffsetFactor={1} // positive value pushes polygon further away
+          polygonOffsetUnits={1}
+          color={hovered ? 'hotpink' : '#006B3C'}
+          side={THREE.DoubleSide}
+        />
+      </mesh>
+    </>
   )
 }
+
 
 
 function Plane({ plane }) {
@@ -171,14 +255,14 @@ function Plane({ plane }) {
 
   const size = 5;
   return <>
-    <Solid mesh={mesh} style={"plane"} ></Solid>
-    <Wireframe mesh={mesh}></Wireframe>
+    {/* <Solid mesh={mesh} style={"plane"} ></Solid> */}
+    <Wireframe mesh={mesh} style={"plane"}></Wireframe>
     <Text
       scale={[size, size, size]}
       color="black" // default
       anchorX="left" // default
       anchorY="top" // default
-      depthOffset={-1}
+      depthOffset={0}
       position={upperLeftPosAry}
       rotation={a}
     >
