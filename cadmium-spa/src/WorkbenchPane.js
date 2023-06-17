@@ -99,39 +99,33 @@ function Sketch({ sketch }) {
 
     {sketchView && sketchView.faces_2d.map((face, index) => {
       const face_shape = new THREE.Shape();
-      const exterior = face.exterior;
-      // const start_pt = exterior.segments[0].start;
-      // console.log("Face starts at: ", start_pt.x, start_pt.y);
-      // face_shape.moveTo(start_pt.x, start_pt.y);
-      console.log("new face");
       let count = 0;
       for (const segment of face.exterior.segments) {
-
-        // console.log("Seg: ", segment.start.x, segment.start.y, " to ", segment.end.x, segment.end.y);
         if (count == 0) {
           face_shape.moveTo(segment.start.x, segment.start.y);
-          // console.log("Moving to: ", segment.start.x, segment.start.y);
         }
-
         face_shape.lineTo(segment.end.x, segment.end.y);
-        // console.log("line to: ", segment.end.x, segment.end.y);
-
         count += 1;
-        // console.log("face continues to: ", segment.end.x, segment.end.y);
       }
 
-      // const points = face_shape.getPoints(20);
+      for (const interior of face.interiors) {
+        console.log("interior: ", interior)
+        const hole_path = new THREE.Path();
+
+        count = 0;
+        for (const segment of interior.segments) {
+          if (count == 0) {
+            hole_path.moveTo(segment.start.x, segment.start.y);
+          }
+          hole_path.lineTo(segment.end.x, segment.end.y);
+          count += 1;
+        }
+
+        face_shape.holes.push(hole_path);
+
+      }
+
       const geometry = new THREE.ShapeGeometry(face_shape);
-      // const geometry = new THREE.BufferGeometry().setFromPoints(points);
-
-      // const positions = new Float32Array(mesh.vertices.flatMap((v) => [v.x, v.y, v.z]));
-      // const normals = new Float32Array(mesh.normals.flatMap((v) => [v.x, v.y, v.z]));
-      // const indices = new Uint16Array(mesh.indices);
-
-      // const geometry = new THREE.BufferGeometry();
-      // geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
-      // geometry.setAttribute('normal', new THREE.BufferAttribute(normals, 3));
-      // geometry.setIndex(new THREE.BufferAttribute(indices, 1));
       return <mesh key={index}>
         <primitive object={geometry}></primitive>
         <meshStandardMaterial

@@ -129,6 +129,15 @@ impl Face {
     pub fn exterior(&self) -> Ring {
         Ring(self.0.exterior.clone())
     }
+
+    #[wasm_bindgen(getter)]
+    pub fn interiors(&self) -> Array {
+        let retval = Array::new();
+        for ring in self.0.interiors.iter() {
+            retval.push(&JsValue::from(Ring(ring.clone())));
+        }
+        retval
+    }
 }
 
 impl Face {
