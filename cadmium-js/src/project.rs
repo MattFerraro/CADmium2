@@ -5,6 +5,12 @@ use crate::workbench::Workbench;
 use js_sys::Array;
 use wasm_bindgen::prelude::*;
 
+macro_rules! log {
+    ( $( $t:tt )* ) => {
+        web_sys::console::log_1(&format!( $( $t )* ).into())
+    }
+}
+
 #[derive(Debug)]
 #[wasm_bindgen]
 pub struct Project(cad_project::Project);
@@ -44,5 +50,35 @@ impl Project {
             Some(wb) => Some(Workbench::wrap(wb)),
             None => None,
         }
+    }
+
+    #[wasm_bindgen]
+    pub fn set_step_parameters(
+        &mut self,
+        workbench_name: &str,
+        step_name: &str,
+        parameter_names: Array,
+        parameter_values: Array,
+    ) {
+        log!("Param names: {:?}", parameter_names);
+        log!("Param values: {:?}", parameter_values);
+        let parameter_names: Vec<String> = parameter_names
+            .iter()
+            .map(|name| name.as_string().unwrap())
+            .collect();
+        let parameter_values: Vec<f64> = parameter_values
+            .iter()
+            .map(|value| value.as_f64().unwrap())
+            .collect();
+
+        log!("Rust: wb name: {} step: {}", workbench_name, step_name);
+        log!("Param names: {:?}", parameter_names);
+        log!("Param values: {:?}", parameter_values);
+        // for (i, name) in parameter_names.iter().enumerate() {
+        //     log!("Rust: param name: {} value: {}", name, parameter_values[i]);
+        // }
+        self.0
+            .set_step_parameters(workbench_name, step_name, parameter_names, parameter_values)
+            .unwrap();
     }
 }

@@ -13,6 +13,9 @@ import { default as init, new_project } from "cadmium-js";
 
 function App() {
   const [project, setProject] = useState(null);
+  const [, updateState] = React.useState();
+  const forceUpdate = React.useCallback(() => updateState({}), []);
+
 
   const [colorScheme, setColorScheme] = useLocalStorage({
     key: 'mantine-color-scheme',
@@ -36,6 +39,12 @@ function App() {
     runOnLoad();
   }, []);
 
+  // const forceUpdate = () => {
+  //   console.log("force update");
+  //   setProject(project);
+  // }
+
+
 
   return (
     <div className="App">
@@ -49,11 +58,11 @@ function App() {
             withGlobalStyles
             withNormalizeCSS
           >
-            <MainWindow project={project}></MainWindow>
+            <MainWindow project={project} forceUpdate={forceUpdate}></MainWindow>
           </MantineProvider>
         </ColorSchemeProvider>
       </header>
-    </div>
+    </div >
   )
 }
 

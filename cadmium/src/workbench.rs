@@ -40,24 +40,42 @@ impl Workbench {
     }
 
     pub fn add_sketch_and_extrusion(&mut self) {
-        // let a = Point2D::new(0.0, 0.0, "A");
-        // let b = Point2D::new(0.0, 0.5, "B");
-        // let c = Point2D::new(0.5, 0.5, "C");
-        // let d = Point2D::new(0.5, 0.0, "D");
-        let width = 150.0;
+        let width = 100.0;
         let depth = 75.0;
         let height = 20.0;
+        let sep = 20.0;
+
+        // Original box
         let a = Point2D::new(-width / 2.0, -depth / 2.0, "A");
         let b = Point2D::new(-width / 2.0, depth / 2.0, "B");
         let c = Point2D::new(width / 2.0, depth / 2.0, "C");
         let d = Point2D::new(width / 2.0, -depth / 2.0, "D");
-        // let e = Point2D::new(0.25, -0.25, "E");
+
+        // Duplicate off to the side
+        let e = Point2D::new(-width / 2.0 + width + sep, -depth / 2.0, "E");
+        let f = Point2D::new(-width / 2.0 + width + sep, depth / 2.0, "F");
+        let g = Point2D::new(width / 2.0 + width + sep, depth / 2.0, "G");
+        let h = Point2D::new(width / 2.0 + width + sep, -depth / 2.0, "H");
+
+        // Add a hole to the original box
+        let i = Point2D::new(-width / 4.0, -depth / 4.0, "I");
+        let j = Point2D::new(-width / 4.0, depth / 4.0, "J");
+        let k = Point2D::new(width / 4.0, depth / 4.0, "K");
+        let l = Point2D::new(width / 4.0, -depth / 4.0, "L");
+
         let segments = Segment::link(vec![a, b, c, d], true);
         let mut sketch1 = Sketch::new();
         sketch1.add_segments(segments);
+
+        let segments2 = Segment::link(vec![e, f, g, h], true);
+        sketch1.add_segments(segments2);
+
+        let segments_hole = Segment::link(vec![i, j, k, l], true);
+        sketch1.add_segments(segments_hole);
+
         self.add_sketch("Sketch 1", sketch1, "Top");
 
-        self.add_extrusion("Extrude 1", "Sketch 1", height, vec![0], Operation::New);
+        self.add_extrusion("Extrude 1", "Sketch 1", height, vec![1, 2], Operation::New);
     }
 
     pub fn add_point(&mut self, name: &str, p: Point) {
@@ -198,6 +216,45 @@ impl Workbench {
 
         wbv
     }
+
+    pub fn set_step_parameters(
+        &mut self,
+        step_name: &str,
+        parameter_names: Vec<String>,
+        value: Vec<f64>,
+    ) -> Result<(), String> {
+        for step in self.steps.iter_mut() {
+            match step {
+                Step::Extrusion {
+                    name,
+                    extrusion,
+                    sketch,
+                    faces,
+                } => {
+                    println!("Found an extrusion");
+                    if name == step_name {
+                        println!("Found the right extrusion");
+                        for name in parameter_names.iter() {
+                            match name.as_str() {
+                                "depth" => {
+                                    extrusion.depth = value[0];
+                                }
+                                _ => {
+                                    return Err(format!(
+                                        "No parameter named {} for step {}",
+                                        name, step_name
+                                    ));
+                                }
+                            }
+                        }
+                        return Ok(());
+                    }
+                }
+                _ => {}
+            }
+        }
+        Err(format!("No step named {}", step_name))
+    }
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
@@ -284,6 +341,58 @@ mod tests {
     use crate::sketch;
 
     use super::*;
+
+    #[test]
+    fn test_add_sketch_and_extrusion() {
+        let mut wb = Workbench::new("wb");
+        wb.add_sketch_and_extrusion();
+        let wbv = wb.create_view(100);
+        let solid0 = wbv.solids.get("Extrude 1_0").unwrap();
+        let as_mesh = solid0.get_mesh();
+
+        let solid1 = wbv.solids.get("Extrude 1_1").unwrap();
+        let as_mesh = solid1.get_mesh();
+    }
+
+    #[test]
+    fn test_actual_dummy_steps() {
+        // let mut wb = Workbench::new("wb");
+        let width = 100.0;
+        let depth = 75.0;
+        let height = 20.0;
+        let sep = 20.0;
+        let a = Point2D::new(-width / 2.0, -depth / 2.0, "A");
+        let b = Point2D::new(-width / 2.0, depth / 2.0, "B");
+        let c = Point2D::new(width / 2.0, depth / 2.0, "C");
+        let d = Point2D::new(width / 2.0, -depth / 2.0, "D");
+
+        let e = Point2D::new(-width / 2.0 + width + sep, -depth / 2.0, "E");
+        let f = Point2D::new(-width / 2.0 + width + sep, depth / 2.0, "F");
+        let g = Point2D::new(width / 2.0 + width + sep, depth / 2.0, "G");
+        let h = Point2D::new(width / 2.0 + width + sep, -depth / 2.0, "H");
+
+        let i = Point2D::new(-width / 4.0, -depth / 4.0, "I");
+        let j = Point2D::new(-width / 4.0, depth / 4.0, "J");
+        let k = Point2D::new(width / 4.0, depth / 4.0, "K");
+        let l = Point2D::new(width / 4.0, -depth / 4.0, "L");
+
+        let segments = Segment::link(vec![a, b, c, d], true);
+        let mut sketch1 = Sketch::new();
+        sketch1.add_segments(segments);
+
+        let segments2 = Segment::link(vec![e, f, g, h], true);
+        sketch1.add_segments(segments2);
+
+        let segments_hole = Segment::link(vec![i, j, k, l], true);
+        sketch1.add_segments(segments_hole);
+        // wb.add_sketch("Sketch 1", sketch1, "Top");
+
+        let faces = sketch1.find_faces(false);
+        println!("Found {} faces", faces.len());
+        for f in faces.iter() {
+            println!("\nFace: {:?}", f);
+        }
+    }
 
     #[test]
     fn test_trangular_prism() {

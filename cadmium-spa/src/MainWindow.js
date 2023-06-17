@@ -1,8 +1,7 @@
 import './App.css'
-import React, { useRef, useState } from 'react'
+import React, { useState } from 'react'
 import { useDisclosure } from '@mantine/hooks';
-import { NumberInput, Collapse, Group, Menu, AppShell, Navbar, Header, Footer, Text, MediaQuery, Burger, useMantineTheme, Button, Tabs, ActionIcon } from '@mantine/core'
-// import MainViewport from './MainViewport'
+import { NumberInput, Collapse, Menu, AppShell, Navbar, Header, Footer, Text, MediaQuery, Burger, useMantineTheme, Button, Tabs, ActionIcon } from '@mantine/core'
 import WorkbenchPane from './WorkbenchPane'
 import AssemblyPane from './AssemblyPane'
 import extrude_min from './images/extrude_min.svg';
@@ -10,10 +9,8 @@ import sketch_min from './images/sketch_min.svg';
 import point_min from './images/point_min.svg'
 import plane_min from './images/plane_min.svg'
 import cube_min from './images/cube_min.svg'
-import { act } from '@react-three/fiber';
 import logo from './logo.svg';
-// import { IconSettings } from '@tabler/icons-react';
-import { IconSettings, IconSearch, IconPhoto, IconMessageCircle, IconTrash, IconFileDownload } from '@tabler/icons-react';
+import { IconFileDownload } from '@tabler/icons-react';
 import { NewPointStep, NewPlaneStep, NewSketchStep, NewExtrudeStep } from "cadmium-js";
 
 
@@ -22,13 +19,11 @@ import { NewPointStep, NewPlaneStep, NewSketchStep, NewExtrudeStep } from "cadmi
 // Cadmium yellow:  #fff600
 // Cadmium green:   #006B3C
 
-function MainWindow({ project }) {
+function MainWindow({ project, forceUpdate }) {
   const [opened, setOpened] = useState(false);
   const theme = useMantineTheme();
   const [activeTab, setActiveTab] = useState('Workbench 1');
   const [activeStep, setActiveStep] = useState(null);
-  // const [activeTabLeft, setActiveTabLeft] = useState('Geometry');
-
 
   const workbench = project && project.get_workbench(activeTab);
   const steps = workbench && workbench.get_steps();
@@ -41,6 +36,12 @@ function MainWindow({ project }) {
   const solids = workbenchView && workbenchView.solids;
   console.log("solids:", solids);
 
+  const setStepParameters = (step_name, parameter_names, parameter_values) => {
+    console.log("SETTING PARAMS");
+    project.set_step_parameters(activeTab, step_name, parameter_names, parameter_values);
+    forceUpdate();
+  };
+
   return (
     <AppShell
       padding="sm"
@@ -52,6 +53,7 @@ function MainWindow({ project }) {
           {steps && steps.map((step, index) => {
             return <HistoryElement
               key={index}
+              setStepParameters={setStepParameters}
               setIsActive={() => setActiveStep(index)}
               setNotActive={() => setActiveStep(null)}
               step={step}>
@@ -191,7 +193,7 @@ function GeometryElement({ image, solid_name, solid_obj }) {
   </Menu >
 }
 
-function HistoryElement({ step, setIsActive, setNotActive }) {
+function HistoryElement({ step, setIsActive, setNotActive, setStepParameters }) {
   const [opened, setOpened] = useState(false);
   const [optionsOpened, { open, close }] = useDisclosure(false);
   const theme = useMantineTheme();
@@ -216,6 +218,7 @@ function HistoryElement({ step, setIsActive, setNotActive }) {
     if (optionsOpened) {
       close();
       setNotActive();
+      // onCloseMenu();
     } else {
       open();
       setIsActive();
@@ -234,28 +237,14 @@ function HistoryElement({ step, setIsActive, setNotActive }) {
 
   let optionsForm = <div><Text>Options</Text></div>
 
-
-  if (step instanceof NewExtrudeStep) {
-    console.log("is extrusion: ", step);
-    optionsForm = <div className='options-form'>
-      <div className='options-form-element'>
-        <NumberInput
-          defaultValue={.2}
-          placeholder="Depth"
-          label="Depth"
-          precision={3}
-          size="md"
-          hideControls
-        />
-      </div>
-      <div className='options-form-element'>
-        <Button size='sm'>
-          Save
-        </Button>
-      </div>
-    </div>
+  function onSave() {
+    close();
   }
 
+
+  if (step instanceof NewExtrudeStep) {
+    optionsForm = ExtrudeStepForm(step, setStepParameters, onSave);
+  }
 
   return <Menu withArrow opened={opened} onClose={onCloseMenu}>
     <Menu.Target>
@@ -286,6 +275,36 @@ function HistoryElement({ step, setIsActive, setNotActive }) {
       <Menu.Item icon={<IconFileDownload size={16} />}>Download OBJ</Menu.Item>
     </Menu.Dropdown >
   </Menu >
+}
+
+const ExtrudeStepForm = (step, setStepParameters, close) => {
+  const [depthValue, setDepthValue] = useState(20);
+
+  function onSave(e) {
+    // console.log("save:", depthValue, step.name, activeTab);
+    setStepParameters(step.name, ["depth"], [depthValue]);
+    close();
+  }
+
+  return <div className='options-form'>
+    <div className='options-form-element'>
+      <NumberInput
+        defaultValue={depthValue}
+        placeholder="Depth"
+        label="Depth"
+        precision={3}
+        size="md"
+        value={depthValue}
+        onChange={setDepthValue}
+        hideControls
+      />
+    </div>
+    <div className='options-form-element'>
+      <Button size='sm' onClick={() => onSave(step.name)}>
+        Save
+      </Button>
+    </div>
+  </div>
 }
 
 export default MainWindow

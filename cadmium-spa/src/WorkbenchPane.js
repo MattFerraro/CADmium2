@@ -1,9 +1,9 @@
 import './App.css'
-import React, { useCallback, useEffect, useRef, useState } from 'react'
+import React, { useCallback, useRef, useState } from 'react'
 import { Canvas, useFrame } from '@react-three/fiber'
 import { CameraControls, Environment, useHelper, Text, Line } from '@react-three/drei'
 import * as THREE from 'three'
-import studio_2_1k from './images/studio_2_1k.hdr'
+// import studio_2_1k from './images/studio_2_1k.hdr'
 // import { VertexNormalsHelper } from "three/examples/jsm/helpers/VertexNormalsHelper";
 
 import { useThree } from '@react-three/fiber'
@@ -80,7 +80,7 @@ function Sketch({ sketch }) {
   const sketchView = sketch.get("sketch");
 
   for (const face of sketchView.faces) {
-    console.log("face:", face);
+    // console.log("face:", face);
   }
 
   return <>
@@ -97,10 +97,32 @@ function Sketch({ sketch }) {
       />
     })}
 
-    {sketchView && sketchView.faces.map((face, index) => {
+    {sketchView && sketchView.faces_2d.map((face, index) => {
+      const face_shape = new THREE.Shape();
+      const exterior = face.exterior;
+      // const start_pt = exterior.segments[0].start;
+      // console.log("Face starts at: ", start_pt.x, start_pt.y);
+      // face_shape.moveTo(start_pt.x, start_pt.y);
+      console.log("new face");
+      let count = 0;
       for (const segment of face.exterior.segments) {
 
+        // console.log("Seg: ", segment.start.x, segment.start.y, " to ", segment.end.x, segment.end.y);
+        if (count == 0) {
+          face_shape.moveTo(segment.start.x, segment.start.y);
+          // console.log("Moving to: ", segment.start.x, segment.start.y);
+        }
+
+        face_shape.lineTo(segment.end.x, segment.end.y);
+        // console.log("line to: ", segment.end.x, segment.end.y);
+
+        count += 1;
+        // console.log("face continues to: ", segment.end.x, segment.end.y);
       }
+
+      // const points = face_shape.getPoints(20);
+      const geometry = new THREE.ShapeGeometry(face_shape);
+      // const geometry = new THREE.BufferGeometry().setFromPoints(points);
 
       // const positions = new Float32Array(mesh.vertices.flatMap((v) => [v.x, v.y, v.z]));
       // const normals = new Float32Array(mesh.normals.flatMap((v) => [v.x, v.y, v.z]));
@@ -111,7 +133,11 @@ function Sketch({ sketch }) {
       // geometry.setAttribute('normal', new THREE.BufferAttribute(normals, 3));
       // geometry.setIndex(new THREE.BufferAttribute(indices, 1));
       return <mesh key={index}>
-
+        <primitive object={geometry}></primitive>
+        <meshStandardMaterial
+          color="#006B3C" opacity={0.2} transparent
+          side={THREE.DoubleSide}
+        />
       </mesh>
     })}
   </>
@@ -207,7 +233,7 @@ function Wireframe({ mesh, style }) {
         />}
 
         {style === "plane" && <meshStandardMaterial
-          color="#006B3C"
+          color="#606060"
           opacity={0.07}
           transparent
           depthWrite={false}

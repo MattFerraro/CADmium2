@@ -176,6 +176,12 @@ impl LineSegment {
     }
 }
 
+impl LineSegment {
+    pub fn wrap(segment: cadmium::common::LineSegment) -> LineSegment {
+        LineSegment(segment)
+    }
+}
+
 #[wasm_bindgen]
 #[derive(Clone, Debug)]
 pub struct LineRing(cadmium::common::LineRing);
@@ -188,6 +194,22 @@ impl LineRing {
     #[wasm_bindgen]
     pub fn get_segment(&self, index: u32) -> LineSegment {
         LineSegment(self.0.segments[index as usize])
+    }
+
+    #[wasm_bindgen(getter)]
+    pub fn segments(&self) -> Array {
+        let retval = Array::new();
+        for segment in self.0.segments.iter() {
+            let wrapped = LineSegment::wrap(*segment);
+            retval.push(&JsValue::from(wrapped));
+        }
+        retval
+    }
+}
+
+impl LineRing {
+    pub fn wrap(segment: cadmium::common::LineRing) -> LineRing {
+        LineRing(segment)
     }
 }
 
@@ -207,6 +229,12 @@ impl LineFace {
     #[wasm_bindgen]
     pub fn get_interior(&self, index: u32) -> LineRing {
         LineRing(self.0.interiors[index as usize].clone())
+    }
+}
+
+impl LineFace {
+    pub fn wrap(segment: cadmium::common::LineFace) -> LineFace {
+        LineFace(segment)
     }
 }
 

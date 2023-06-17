@@ -3,6 +3,8 @@ use cadmium::{self};
 use js_sys::Array;
 use wasm_bindgen::prelude::*;
 
+use crate::common::{LineFace, LineSegment};
+
 macro_rules! log {
     ( $( $t:tt )* ) => {
         web_sys::console::log_1(&format!( $( $t )* ).into())
@@ -68,6 +70,16 @@ pub struct Ring(cadmium::sketch::Ring);
 
 #[wasm_bindgen]
 impl Ring {
+    #[wasm_bindgen(getter)]
+    pub fn segments(&self) -> Array {
+        let retval = Array::new();
+        for segment in self.0.iter() {
+            let wrapped = Segment::wrap(segment);
+            retval.push(&JsValue::from(wrapped));
+        }
+        retval
+    }
+
     #[wasm_bindgen]
     pub fn num_segments(&self) -> usize {
         self.0.len()
@@ -113,17 +125,39 @@ pub struct Face(cadmium::sketch::Face);
 
 #[wasm_bindgen]
 impl Face {
-    #[wasm_bindgen]
-    pub fn num_interiors(&self) -> u32 {
-        self.0.interiors.len() as u32
-    }
     #[wasm_bindgen(getter)]
     pub fn exterior(&self) -> Ring {
         Ring(self.0.exterior.clone())
     }
-    #[wasm_bindgen]
-    pub fn get_interior(&self, index: u32) -> Ring {
-        Ring(self.0.interiors[index as usize].clone())
+}
+
+impl Face {
+    pub fn wrap(wb: &cad_sketch::Face) -> Face {
+        Face(wb.to_owned())
+    }
+}
+
+#[wasm_bindgen]
+#[derive(Clone, Debug)]
+pub struct Segment(cadmium::sketch::Segment);
+
+impl Segment {
+    pub fn wrap(wb: &cad_sketch::Segment) -> Segment {
+        Segment(wb.to_owned())
+    }
+}
+
+#[wasm_bindgen]
+impl Segment {
+    #[wasm_bindgen(getter)]
+    pub fn start(&self) -> crate::common::Point {
+        let start = self.0.get_start();
+        crate::common::Point::new(start.x, start.y, f64::NAN)
+    }
+    #[wasm_bindgen(getter)]
+    pub fn end(&self) -> crate::common::Point {
+        let end = self.0.get_end();
+        crate::common::Point::new(end.x, end.y, f64::NAN)
     }
 }
 
@@ -196,5 +230,48 @@ pub struct SketchView(cadmium::sketch::SketchView);
 impl SketchView {
     pub fn wrap(wb: &cad_sketch::SketchView) -> SketchView {
         SketchView(wb.to_owned())
+    }
+}
+
+#[wasm_bindgen]
+impl SketchView {
+    #[wasm_bindgen(getter)]
+    pub fn segments(&self) -> Array {
+        let retval = Array::new();
+        for segment in self.0.segments.iter() {
+            let wrapped = LineSegment::wrap(*segment);
+            retval.push(&JsValue::from(wrapped));
+        }
+        retval
+    }
+
+    #[wasm_bindgen(getter)]
+    pub fn faces(&self) -> Array {
+        let retval = Array::new();
+        for face in self.0.faces.iter() {
+            let wrapped = LineFace::wrap(face.clone());
+            retval.push(&JsValue::from(wrapped));
+        }
+        retval
+    }
+
+    #[wasm_bindgen(getter)]
+    pub fn faces_2d(&self) -> Array {
+        let retval = Array::new();
+        for face in self.0.faces_2d.iter() {
+            let wrapped = Face::wrap(face);
+            retval.push(&JsValue::from(wrapped));
+        }
+        retval
+    }
+
+    #[wasm_bindgen(getter)]
+    pub fn segments_2d(&self) -> Array {
+        let retval = Array::new();
+        for segment in self.0.segments_2d.iter() {
+            let wrapped = Segment::wrap(segment);
+            retval.push(&JsValue::from(wrapped));
+        }
+        retval
     }
 }

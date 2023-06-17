@@ -498,6 +498,8 @@ impl Sketch {
         let mut sv = SketchView {
             segments: vec![],
             faces: vec![],
+            segments_2d: vec![],
+            faces_2d: vec![],
         };
 
         for segment in self.segments.iter() {
@@ -512,7 +514,16 @@ impl Sketch {
             sv.segments.push(line_segment);
         }
 
+        for segment in self.segments.iter() {
+            sv.segments_2d.push(segment.clone());
+        }
+
         let faces = self.find_faces(false);
+
+        for face in faces.iter() {
+            sv.faces_2d.push(face.clone());
+        }
+
         for face in faces.iter() {
             let mut exterior: LineRing = LineRing::new();
             let mut interiors: Vec<LineRing> = vec![];
@@ -568,6 +579,8 @@ impl Sketch {
 pub struct SketchView {
     pub segments: Vec<LineSegment>,
     pub faces: Vec<LineFace>,
+    pub segments_2d: Vec<Segment>,
+    pub faces_2d: Vec<Face>,
 }
 
 pub fn find_next_segment_index(
