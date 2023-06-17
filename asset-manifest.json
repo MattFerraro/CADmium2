@@ -1,10 +1,10 @@
 {
   "files": {
-    "main.css": "https://mattferraro.github.io/CADmium2/static/css/main.bc4e3a1a.css",
-    "main.js": "https://mattferraro.github.io/CADmium2/static/js/main.b22e953a.js",
+    "main.css": "https://mattferraro.github.io/CADmium2/static/css/main.eb631f0f.css",
+    "main.js": "https://mattferraro.github.io/CADmium2/static/js/main.6e0cde75.js",
     "static/js/787.11f74825.chunk.js": "https://mattferraro.github.io/CADmium2/static/js/787.11f74825.chunk.js",
     "static/media/studio_2_1k.hdr": "https://mattferraro.github.io/CADmium2/static/media/studio_2_1k.80e1b5f916c9df22bc21.hdr",
-    "static/media/cadmium_js_bg.wasm": "https://mattferraro.github.io/CADmium2/static/media/cadmium_js_bg.0a9e29caa016ce2f4bca.wasm",
+    "static/media/cadmium_js_bg.wasm": "https://mattferraro.github.io/CADmium2/static/media/cadmium_js_bg.e284c6a35c3ddb1e32e7.wasm",
     "static/media/logo.svg": "https://mattferraro.github.io/CADmium2/static/media/logo.c112819468e9e1c76954f15e22e38976.svg",
     "static/media/cube_min.svg": "https://mattferraro.github.io/CADmium2/static/media/cube_min.1022d8076f10916872648aeb085ced26.svg",
     "static/media/extrude_min.svg": "https://mattferraro.github.io/CADmium2/static/media/extrude_min.5ab9b7a7c1bf5e92d7412622c74fd16e.svg",
@@ -12,12 +12,12 @@
     "static/media/point_min.svg": "https://mattferraro.github.io/CADmium2/static/media/point_min.57c28cc17c0f13f643db85f25369fd71.svg",
     "static/media/sketch_min.svg": "https://mattferraro.github.io/CADmium2/static/media/sketch_min.0078c21dc9e98b29eb435ab44bd0f229.svg",
     "static/media/plane_min.svg": "https://mattferraro.github.io/CADmium2/static/media/plane_min.1515b07d80cdd2062c45e0412d7a2429.svg",
-    "main.bc4e3a1a.css.map": "https://mattferraro.github.io/CADmium2/static/css/main.bc4e3a1a.css.map",
-    "main.b22e953a.js.map": "https://mattferraro.github.io/CADmium2/static/js/main.b22e953a.js.map",
+    "main.eb631f0f.css.map": "https://mattferraro.github.io/CADmium2/static/css/main.eb631f0f.css.map",
+    "main.6e0cde75.js.map": "https://mattferraro.github.io/CADmium2/static/js/main.6e0cde75.js.map",
     "787.11f74825.chunk.js.map": "https://mattferraro.github.io/CADmium2/static/js/787.11f74825.chunk.js.map"
   },
   "entrypoints": [
-    "static/css/main.bc4e3a1a.css",
-    "static/js/main.b22e953a.js"
+    "static/css/main.eb631f0f.css",
+    "static/js/main.6e0cde75.js"
   ]
 }
