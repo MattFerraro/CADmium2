@@ -23,13 +23,13 @@ function MainWindow({ project, forceUpdate }) {
   const [opened, setOpened] = useState(false);
   const theme = useMantineTheme();
   const [activeTab, setActiveTab] = useState('Workbench 1');
-  const [activeStep, setActiveStep] = useState(null);
+  const [stepWithAttention, setStepWithAttention] = useState(null);
 
   const workbench = project && project.get_workbench(activeTab);
   const steps = workbench && workbench.get_steps();
   let workbenchView = null;
-  if (activeStep !== null) {
-    workbenchView = steps && workbench.create_view(activeStep + 1);
+  if (stepWithAttention !== null) {
+    workbenchView = steps && workbench.create_view(stepWithAttention + 1);
   } else {
     workbenchView = steps && workbench.create_view(1000);
   }
@@ -54,8 +54,9 @@ function MainWindow({ project, forceUpdate }) {
             return <HistoryElement
               key={index}
               setStepParameters={setStepParameters}
-              setIsActive={() => setActiveStep(index)}
-              setNotActive={() => setActiveStep(null)}
+              hasAttention={stepWithAttention === index}
+              grabAttention={() => setStepWithAttention(index)}
+              cedeAttention={() => setStepWithAttention(null)}
               step={step}>
             </HistoryElement>
           })}
@@ -193,9 +194,9 @@ function GeometryElement({ image, solid_name, solid_obj }) {
   </Menu >
 }
 
-function HistoryElement({ step, setIsActive, setNotActive, setStepParameters }) {
-  const [opened, setOpened] = useState(false);
-  const [optionsOpened, { open, close }] = useDisclosure(false);
+function HistoryElement({ step, hasAttention, grabAttention, cedeAttention, setStepParameters }) {
+  // const [opened, setOpened] = useState(false);
+  // const [optionsOpened, { open, close }] = useDisclosure(false);
   const theme = useMantineTheme();
 
   let image = <img alt={"Nothing"} width="30px"></img>;
@@ -214,66 +215,41 @@ function HistoryElement({ step, setIsActive, setNotActive, setStepParameters }) 
 
   function onDoubleClick(e) {
     e.preventDefault();
-    console.log("doub click on ");
-    if (optionsOpened) {
-      close();
-      setNotActive();
-      // onCloseMenu();
+    console.log("doub click. Has attention? ", hasAttention);
+    if (hasAttention) {
+      cedeAttention();
     } else {
-      open();
-      setIsActive();
+      grabAttention();
     }
   }
 
-  function onCloseMenu() {
-    console.log("close menu");
-    setOpened(false);
-  }
-
-  function onRightClick(e) {
-    console.log("right click");
-    e.preventDefault();
-  }
-
-  let optionsForm = <div><Text>Options</Text></div>
-
   function onSave() {
-    close();
+    cedeAttention();
   }
 
+  let optionsForm = <div><Button onClick={onSave}>Save</Button></div>
 
   if (step instanceof NewExtrudeStep) {
     optionsForm = ExtrudeStepForm(step, setStepParameters, onSave);
   }
 
-  return <Menu withArrow opened={opened} onClose={onCloseMenu}>
+  // onClose={onCloseMenu}
+  return <Menu withArrow opened={hasAttention}>
     <Menu.Target>
       <div>
         <div
           onDoubleClick={onDoubleClick}
-          onContextMenu={onRightClick}
+          // onContextMenu={onRightClick}
           className='history-element' >
           {image}
           <Text>{step.name}</Text>
 
-          {/* <Modal opened={modalOpened} onClose={close} title="Options"
-          overlayProps={{
-            color: theme.colorScheme === 'dark' ? theme.colors.dark[9] : theme.colors.gray[2],
-            opacity: 0.1,
-            blur: 2,
-          }}>
-          Modal Content
-        </Modal> */}
         </div>
-        <Collapse in={optionsOpened}>
+        <Collapse in={hasAttention}>
           {optionsForm}
         </Collapse>
       </div>
     </Menu.Target>
-    <Menu.Dropdown>
-      <Menu.Label>Application</Menu.Label>
-      <Menu.Item icon={<IconFileDownload size={16} />}>Download OBJ</Menu.Item>
-    </Menu.Dropdown >
   </Menu >
 }
 

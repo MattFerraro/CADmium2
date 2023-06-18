@@ -91,7 +91,7 @@ function Sketch({ sketch }) {
           [segment.start.x, segment.start.y, segment.start.z],
           [segment.end.x, segment.end.y, segment.end.z],
         ]}
-        color={"#FF0000"}
+        color={"#000000"}
         lineWidth={2}
       // segments  // If true, renders a THREE.LineSegments2. Otherwise, renders a THREE.Line2
       />
