@@ -41,8 +41,28 @@ npm run elect
 ```
 
 
-# TODO:
+# TODO (code only)
 
 - Remove the "id" field from cadmium::sketch::Point
 - Simplify the cadmium::common:Plane field to remove extra fields
 - cadmium::sketch::Ring should be a struct not a type alias
+- combine all the wasm_bindgen annotations into the one primary cadmium crate?
+
+# TODO (features)
+
+- for a sketch, draw a rectangle and put the sketch name on it
+- fix projection matrix so sketches can be rendered properly on any plane
+- add ability to edit the name of a step
+- on mouseover for a part name, highlight it in 3D
+- boolean operations
+- generalize extrusion step to allow for merging
+- ability to put sketches on arbitrary faces of existing geometry
+- ability to delete a part
+- incorporate revolve
+
+
+# TODO (Extraordinarily difficult)
+
+- 2D sketch constraint solver
+- Fillters
+- Chamfers
