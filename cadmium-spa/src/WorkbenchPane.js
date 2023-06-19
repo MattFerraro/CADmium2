@@ -6,9 +6,10 @@ import * as THREE from 'three'
 // import studio_2_1k from './images/studio_2_1k.hdr'
 // import { VertexNormalsHelper } from "three/examples/jsm/helpers/VertexNormalsHelper";
 
-import { useThree } from '@react-three/fiber'
+// import { useThree } from '@react-three/fiber'
 
 function WorkbenchPane({ workbenchView, activeTool }) {
+
   let parts = null;
   if (workbenchView) {
     parts = workbenchView.solids.map((solid) => solid.get("solid").get_mesh());
@@ -63,14 +64,15 @@ function WorkbenchPane({ workbenchView, activeTool }) {
       })}
 
       {sketches && sketches.map((sketch, index) => {
-        return <Sketch key={index} sketch={sketch}></Sketch>
+        return <Sketch key={index} sketch={sketch} activeTool={activeTool}></Sketch>
       })}
     </Canvas>
   )
 }
 
-function Sketch({ sketch }) {
+function Sketch({ sketch, activeTool }) {
   const [anchorPoint, setAnchorPoint] = useState(null);
+  const [secondPoint, setSecondPoint] = useState(null);
   const sketchView = sketch.get("sketch");
 
   const frame = sketchView.coordinate_frame;
@@ -90,12 +92,41 @@ function Sketch({ sketch }) {
   textPosition.applyEuler(a);
 
   const onClick = (e) => {
-    console.log("Sketch click: ", e.point);
+    if (activeTool === "line") {
+      if (anchorPoint === null) {
+        setAnchorPoint(e.point);
+      } else {
+        // A line segment has been finished!
+        console.log("New segment: ", anchorPoint, e.point);
+        setAnchorPoint(e.point);
+        setSecondPoint(null);
+      }
+    }
+  }
+
+  const onMouseMove = (e) => {
+    if (activeTool === "line") {
+      if (anchorPoint !== null) {
+        setSecondPoint(e.point);
+      }
+
+    }
   }
 
   const size = 7;
   return <>
-    <mesh rotation={a} onClick={onClick}>
+    {secondPoint &&
+      <Line
+        points={[
+          [anchorPoint.x, anchorPoint.y, anchorPoint.z],
+          [secondPoint.x, secondPoint.y, secondPoint.z],
+        ]}
+        color={"#000000"}
+        lineWidth={2}
+      />
+    }
+
+    <mesh rotation={a} onClick={onClick} onPointerMove={onMouseMove}>
       <primitive object={collisionGeometry}></primitive>
       <meshStandardMaterial
         color="#FF0000" opacity={0.0} transparent
@@ -174,7 +205,6 @@ function Sketch({ sketch }) {
 
 function Part({ mesh }) {
   return <>
-    {/* <Solid mesh={mesh} style="solid"></Solid> */}
     <Wireframe mesh={mesh} style="solid"></Wireframe>
   </>
 }

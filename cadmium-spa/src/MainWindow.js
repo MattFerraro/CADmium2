@@ -12,7 +12,7 @@ import cube_min from './images/cube_min.svg'
 import logo from './logo.svg';
 import { IconFileDownload, IconRulerMeasure, IconBackslash } from '@tabler/icons-react';
 import { NewPointStep, NewPlaneStep, NewSketchStep, NewExtrudeStep } from "cadmium-js";
-
+import { useHotkeys } from '@mantine/hooks';
 
 // Cadmium blue:    #0a1195
 // Cadmium red:     #e30022
@@ -20,6 +20,8 @@ import { NewPointStep, NewPlaneStep, NewSketchStep, NewExtrudeStep } from "cadmi
 // Cadmium green:   #006B3C
 
 function MainWindow({ project, forceUpdate }) {
+
+
   const [opened, setOpened] = useState(false);
   const theme = useMantineTheme();
   const [activeTab, setActiveTab] = useState('Workbench 1');
@@ -48,6 +50,13 @@ function MainWindow({ project, forceUpdate }) {
     project.set_step_parameters(activeTab, step_name, parameter_names, parameter_values);
     forceUpdate();
   };
+
+  useHotkeys([
+    ['Escape', () => {
+      console.log('escape!');
+      setActiveTool(null);
+    }],
+  ]);
 
   return (
     <AppShell
