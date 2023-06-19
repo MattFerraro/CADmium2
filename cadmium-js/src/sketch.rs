@@ -3,7 +3,7 @@ use cadmium::{self};
 use js_sys::Array;
 use wasm_bindgen::prelude::*;
 
-use crate::common::{LineFace, LineSegment};
+use crate::common::{CoordinateFrame, LineFace, LineSegment};
 
 macro_rules! log {
     ( $( $t:tt )* ) => {
@@ -282,5 +282,10 @@ impl SketchView {
             retval.push(&JsValue::from(wrapped));
         }
         retval
+    }
+
+    #[wasm_bindgen(getter)]
+    pub fn coordinate_frame(&self) -> CoordinateFrame {
+        CoordinateFrame::wrap(self.0.coordinate_frame)
     }
 }

@@ -500,6 +500,7 @@ impl Sketch {
             faces: vec![],
             segments_2d: vec![],
             faces_2d: vec![],
+            coordinate_frame: frame.clone(),
         };
 
         for segment in self.segments.iter() {
@@ -581,6 +582,7 @@ pub struct SketchView {
     pub faces: Vec<LineFace>,
     pub segments_2d: Vec<Segment>,
     pub faces_2d: Vec<Face>,
+    pub coordinate_frame: CoordinateFrame,
 }
 
 pub fn find_next_segment_index(

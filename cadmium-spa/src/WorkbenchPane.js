@@ -79,11 +79,28 @@ function Sketch({ sketch }) {
   const distance = 50
   const sketchView = sketch.get("sketch");
 
-  for (const face of sketchView.faces) {
-    // console.log("face:", face);
-  }
+  const frame = sketchView.coordinate_frame;
+  const three_x = new THREE.Vector3(frame.x_axis.x, frame.x_axis.y, frame.x_axis.z);
+  const three_y = new THREE.Vector3(frame.y_axis.x, frame.y_axis.y, frame.y_axis.z);
+  const three_z = new THREE.Vector3(frame.normal.x, frame.normal.y, frame.normal.z);
+  const m = new THREE.Matrix4();
+  m.makeBasis(three_x, three_y, three_z);
+  const a = new THREE.Euler(0, 0, 0, 'XYZ');
+  a.setFromRotationMatrix(m, "XYZ");
 
+  const size = 5;
   return <>
+    <Text
+      scale={[size, size, size]}
+      color="black" // default
+      anchorX="left" // default
+      anchorY="top" // default
+      depthOffset={0}
+      position={[0, 0, 0]}
+      rotation={a}
+    >
+      {sketch.get("name")}
+    </Text>
     {sketchView && sketchView.segments.map((segment, index) => {
       return <Line
         key={index}
@@ -126,7 +143,7 @@ function Sketch({ sketch }) {
       }
 
       const geometry = new THREE.ShapeGeometry(face_shape);
-      return <mesh key={index}>
+      return <mesh key={index} rotation={a}>
         <primitive object={geometry}></primitive>
         <meshStandardMaterial
           color="#006B3C" opacity={0.2} transparent

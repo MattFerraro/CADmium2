@@ -10,7 +10,7 @@ import point_min from './images/point_min.svg'
 import plane_min from './images/plane_min.svg'
 import cube_min from './images/cube_min.svg'
 import logo from './logo.svg';
-import { IconFileDownload } from '@tabler/icons-react';
+import { IconFileDownload, IconRulerMeasure } from '@tabler/icons-react';
 import { NewPointStep, NewPlaneStep, NewSketchStep, NewExtrudeStep } from "cadmium-js";
 
 
@@ -24,6 +24,8 @@ function MainWindow({ project, forceUpdate }) {
   const theme = useMantineTheme();
   const [activeTab, setActiveTab] = useState('Workbench 1');
   const [stepWithAttention, setStepWithAttention] = useState(null);
+  const [mode, setMode] = useState("3D"); // can also be "sketch", changes to this affect which buttons
+  // are shown on the top bar
 
   const workbench = project && project.get_workbench(activeTab);
   const steps = workbench && workbench.get_steps();
@@ -53,6 +55,7 @@ function MainWindow({ project, forceUpdate }) {
           {steps && steps.map((step, index) => {
             return <HistoryElement
               key={index}
+              setMode={setMode}
               setStepParameters={setStepParameters}
               hasAttention={stepWithAttention === index}
               grabAttention={() => setStepWithAttention(index)}
@@ -133,8 +136,21 @@ function MainWindow({ project, forceUpdate }) {
               </div>
               <Text fz="xl">{project && project.name}</Text>
               <div className='actions-container'>
-                <ActionIcon size={'lg'} variant="subtle"><img src={sketch_min} width="30px"></img></ActionIcon>
-                <ActionIcon size={'lg'} variant="subtle"><img src={extrude_min} width="30px"></img></ActionIcon>
+                {mode === "3D" &&
+                  <>
+                    <ActionIcon size={'lg'} variant="subtle"><img src={sketch_min} width="30px"></img></ActionIcon>
+                    <ActionIcon size={'lg'} variant="subtle"><img src={extrude_min} width="30px"></img></ActionIcon>
+                  </>
+                }
+
+                {mode === "sketch" &&
+                  <>
+                    <ActionIcon size={'lg'} variant="default" >
+                      <IconRulerMeasure size={16} />
+                    </ActionIcon>
+                  </>
+                }
+
               </div>
             </div>
 
@@ -194,10 +210,8 @@ function GeometryElement({ image, solid_name, solid_obj }) {
   </Menu >
 }
 
-function HistoryElement({ step, hasAttention, grabAttention, cedeAttention, setStepParameters }) {
-  // const [opened, setOpened] = useState(false);
-  // const [optionsOpened, { open, close }] = useDisclosure(false);
-  const theme = useMantineTheme();
+function HistoryElement({ step, hasAttention, grabAttention, cedeAttention, setStepParameters, setMode }) {
+  // const theme = useMantineTheme();
 
   let image = <img alt={"Nothing"} width="30px"></img>;
   if (step instanceof NewPointStep) {
@@ -219,18 +233,26 @@ function HistoryElement({ step, hasAttention, grabAttention, cedeAttention, setS
     if (hasAttention) {
       cedeAttention();
     } else {
+      if (step instanceof NewSketchStep) {
+        setMode("sketch");
+      }
       grabAttention();
     }
   }
 
   function onSave() {
     cedeAttention();
+    setMode("3D");
   }
 
   let optionsForm = <div><Button onClick={onSave}>Save</Button></div>
 
   if (step instanceof NewExtrudeStep) {
     optionsForm = ExtrudeStepForm(step, setStepParameters, onSave);
+  }
+
+  if (step instanceof NewSketchStep) {
+    optionsForm = SketchStepForm(step, setStepParameters, onSave);
   }
 
   // onClose={onCloseMenu}
@@ -252,6 +274,19 @@ function HistoryElement({ step, hasAttention, grabAttention, cedeAttention, setS
     </Menu.Target>
   </Menu >
 }
+
+const SketchStepForm = (step, setStepParameters, close) => {
+  return <div className='options-form'>
+    <div className='options-form-element'>
+    </div>
+    <div className='options-form-element'>
+      <Button size='sm' onClick={close}>
+        Save
+      </Button>
+    </div>
+  </div>
+}
+
 
 const ExtrudeStepForm = (step, setStepParameters, close) => {
   const [depthValue, setDepthValue] = useState(20);

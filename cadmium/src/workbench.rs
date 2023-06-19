@@ -73,7 +73,7 @@ impl Workbench {
         let segments_hole = Segment::link(vec![i, j, k, l], true);
         sketch1.add_segments(segments_hole);
 
-        self.add_sketch("Sketch 1", sketch1, "Top");
+        self.add_sketch("Sketch 1", sketch1, "Front");
 
         self.add_extrusion("Extrude 1", "Sketch 1", height, vec![1, 2], Operation::New);
     }
