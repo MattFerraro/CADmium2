@@ -1,5 +1,5 @@
 import './App.css'
-import React, { useState } from 'react'
+import React, { useEffect, useState } from 'react'
 import { useDisclosure } from '@mantine/hooks';
 import { NumberInput, Collapse, Menu, AppShell, Navbar, Header, Footer, Text, MediaQuery, Burger, useMantineTheme, Button, Tabs, ActionIcon } from '@mantine/core'
 import WorkbenchPane from './WorkbenchPane'
@@ -10,7 +10,7 @@ import point_min from './images/point_min.svg'
 import plane_min from './images/plane_min.svg'
 import cube_min from './images/cube_min.svg'
 import logo from './logo.svg';
-import { IconFileDownload, IconRulerMeasure } from '@tabler/icons-react';
+import { IconFileDownload, IconRulerMeasure, IconBackslash } from '@tabler/icons-react';
 import { NewPointStep, NewPlaneStep, NewSketchStep, NewExtrudeStep } from "cadmium-js";
 
 
@@ -26,6 +26,11 @@ function MainWindow({ project, forceUpdate }) {
   const [stepWithAttention, setStepWithAttention] = useState(null);
   const [mode, setMode] = useState("3D"); // can also be "sketch", changes to this affect which buttons
   // are shown on the top bar
+  const [activeTool, setActiveTool] = useState(null);
+
+  useEffect(() => {
+    setActiveTool(null);
+  }, [mode]);
 
   const workbench = project && project.get_workbench(activeTab);
   const steps = workbench && workbench.get_steps();
@@ -145,7 +150,10 @@ function MainWindow({ project, forceUpdate }) {
 
                 {mode === "sketch" &&
                   <>
-                    <ActionIcon size={'lg'} variant="default" >
+                    <ActionIcon size={'lg'} variant={activeTool === "line" ? "filled" : "subtle"} onClick={() => { if (activeTool === "line") { setActiveTool(null) } else { setActiveTool("line") } }} >
+                      <IconBackslash size={16} />
+                    </ActionIcon>
+                    <ActionIcon size={'lg'} variant="subtle" >
                       <IconRulerMeasure size={16} />
                     </ActionIcon>
                   </>
@@ -155,7 +163,7 @@ function MainWindow({ project, forceUpdate }) {
             </div>
 
           </div>
-        </Header >
+        </ Header >
       }
       styles={(theme) => ({
         main: {
@@ -167,7 +175,7 @@ function MainWindow({ project, forceUpdate }) {
       })}
     >
 
-      {activeTab === "Workbench 1" && <WorkbenchPane workbenchView={workbenchView}></WorkbenchPane>}
+      {activeTab === "Workbench 1" && <WorkbenchPane workbenchView={workbenchView} activeTool={activeTool}></WorkbenchPane>}
       {activeTab === "Assembly 1" && <AssemblyPane></AssemblyPane>}
 
     </AppShell >
@@ -227,23 +235,26 @@ function HistoryElement({ step, hasAttention, grabAttention, cedeAttention, setS
     image = <img alt={"An Extrusion"} src={extrude_min} width="30px"></img>
   }
 
-  function onDoubleClick(e) {
-    e.preventDefault();
-    console.log("doub click. Has attention? ", hasAttention);
-    if (hasAttention) {
-      cedeAttention();
-    } else {
-      if (step instanceof NewSketchStep) {
-        setMode("sketch");
-      }
-      grabAttention();
-    }
-  }
-
   function onSave() {
     cedeAttention();
     setMode("3D");
   }
+
+  function onDoubleClick(e) {
+    e.preventDefault();
+    if (hasAttention) {
+      onSave();
+    } else {
+      grabAttention();
+      if (step instanceof NewSketchStep) {
+        setMode("sketch");
+      } else {
+        setMode("3D");
+      }
+    }
+  }
+
+
 
   let optionsForm = <div><Button onClick={onSave}>Save</Button></div>
 

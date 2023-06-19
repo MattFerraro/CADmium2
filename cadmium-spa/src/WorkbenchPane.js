@@ -8,8 +8,7 @@ import * as THREE from 'three'
 
 import { useThree } from '@react-three/fiber'
 
-function WorkbenchPane({ workbenchView }) {
-
+function WorkbenchPane({ workbenchView, activeTool }) {
   let parts = null;
   if (workbenchView) {
     parts = workbenchView.solids.map((solid) => solid.get("solid").get_mesh());
@@ -43,7 +42,7 @@ function WorkbenchPane({ workbenchView }) {
   const overallScale = 100;
 
   return (
-    <Canvas linear={true} frameloop='always' orthographic camera={{ far: 50000, near: 0.0, zoom: 4.0, position: [1 * overallScale, -1 * overallScale, 1 * overallScale], up: [0, 0, 1] }} style={{ height: '100%' }}>
+    <Canvas linear={true} frameloop='always' orthographic camera={{ far: 50000, near: 0.0, zoom: 4.0, position: [1 * overallScale, -1 * overallScale, 1 * overallScale], up: [0, 0, 1] }} style={{ height: '100%', cursor: activeTool === "line" ? "crosshair" : "auto" }}>
       {/* <Environment files={studio_2_1k} /> */}
 
       <CameraControls ref={mouseConfig} dollyToCursor={true} maxPolarAngle={900} />
@@ -66,17 +65,12 @@ function WorkbenchPane({ workbenchView }) {
       {sketches && sketches.map((sketch, index) => {
         return <Sketch key={index} sketch={sketch}></Sketch>
       })}
-
-      { }
-      {/* <axesHelper></axesHelper> */}
     </Canvas>
   )
 }
 
 function Sketch({ sketch }) {
-  const cx = 100
-  const cy = 100
-  const distance = 50
+  const [anchorPoint, setAnchorPoint] = useState(null);
   const sketchView = sketch.get("sketch");
 
   const frame = sketchView.coordinate_frame;
@@ -88,8 +82,23 @@ function Sketch({ sketch }) {
   const a = new THREE.Euler(0, 0, 0, 'XYZ');
   a.setFromRotationMatrix(m, "XYZ");
 
+  const geometry = new THREE.PlaneGeometry(20000, 20000);
+
+  const onClick = (e) => {
+    console.log("Sketch click: ", e.point);
+  }
+
   const size = 5;
   return <>
+    <mesh rotation={a} onClick={onClick}>
+      <primitive object={geometry}></primitive>
+      <meshStandardMaterial
+        color="#FF0000" opacity={0.0} transparent
+        side={THREE.DoubleSide}
+        depthWrite={false}
+      />
+    </mesh>
+
     <Text
       scale={[size, size, size]}
       color="black" // default
@@ -126,7 +135,6 @@ function Sketch({ sketch }) {
       }
 
       for (const interior of face.interiors) {
-        console.log("interior: ", interior)
         const hole_path = new THREE.Path();
 
         count = 0;
@@ -148,6 +156,7 @@ function Sketch({ sketch }) {
         <meshStandardMaterial
           color="#006B3C" opacity={0.2} transparent
           side={THREE.DoubleSide}
+          depthWrite={false}
         />
       </mesh>
     })}
