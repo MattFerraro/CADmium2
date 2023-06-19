@@ -5,11 +5,11 @@ use wasm_bindgen::prelude::*;
 
 use crate::common::{CoordinateFrame, LineFace, LineSegment};
 
-macro_rules! log {
-    ( $( $t:tt )* ) => {
-        web_sys::console::log_1(&format!( $( $t )* ).into())
-    }
-}
+// macro_rules! log {
+//     ( $( $t:tt )* ) => {
+//         web_sys::console::log_1(&format!( $( $t )* ).into())
+//     }
+// }
 
 #[wasm_bindgen]
 #[derive(Clone, Debug)]
@@ -181,29 +181,12 @@ impl Sketch {
     }
 
     #[wasm_bindgen]
-    pub fn add_segments(&mut self, segments: Array) {
-        for seg in segments.iter() {
-            log!("segment: {:?}", seg);
-            // let line = seg.dyn_ref::<Line>();
-            // let line = seg.dyn_ref::<Line>();
-
-            // match line {
-            //     Some(line) => {
-            //         let as_seg = cadmium::sketch::Segment::Line(line.0.clone());
-            //         self.0.segments.push(as_seg);
-            //     }
-            //     None => {
-            //         let arc = seg.dyn_ref::<Arc>();
-            //         match arc {
-            //             Some(arc) => {
-            //                 let as_seg = cadmium::sketch::Segment::Arc(arc.0.clone());
-            //                 self.0.segments.push(as_seg);
-            //             }
-            //             None => panic!("unknown segment type"),
-            //         }
-            //     }
-            // }
-        }
+    pub fn add_segment(&mut self, x1: f64, y1: f64, x2: f64, y2: f64) {
+        let start = cadmium::sketch::Point::new(x1, y1, "a");
+        let end = cadmium::sketch::Point::new(x2, y2, "a");
+        let line = cadmium::sketch::Line::new(start, end);
+        let as_seg = cadmium::sketch::Segment::Line(line);
+        self.0.segments.push(as_seg);
     }
 
     #[wasm_bindgen]

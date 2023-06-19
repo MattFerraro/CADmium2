@@ -53,6 +53,21 @@ impl Project {
     }
 
     #[wasm_bindgen]
+    pub fn add_segment_to_sketch(
+        &mut self,
+        workbench_name: String,
+        sketch_name: String,
+        x1: f64,
+        y1: f64,
+        x2: f64,
+        y2: f64,
+    ) {
+        self.0
+            .add_segment_to_sketch(&workbench_name, &sketch_name, x1, y1, x2, y2)
+            .unwrap();
+    }
+
+    #[wasm_bindgen]
     pub fn set_step_parameters(
         &mut self,
         workbench_name: &str,

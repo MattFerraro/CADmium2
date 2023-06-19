@@ -217,6 +217,38 @@ impl Workbench {
         wbv
     }
 
+    pub fn add_segment_to_sketch(
+        &mut self,
+        sketch_name: &str,
+        x1: f64,
+        y1: f64,
+        x2: f64,
+        y2: f64,
+    ) -> Result<(), String> {
+        for step in self.steps.iter_mut() {
+            match step {
+                Step::Sketch {
+                    name,
+                    sketch,
+                    plane,
+                } => {
+                    if name == sketch_name {
+                        let start = Point2D::new(x1, y1, "start");
+                        let end = Point2D::new(x2, y2, "end");
+                        let segments = Segment::link(vec![start, end], false);
+
+                        sketch.add_segments(segments);
+                        // let line = Line::new(p1, p2);
+                        // sketch.add_line(line);
+                        return Ok(());
+                    }
+                }
+                _ => {}
+            }
+        }
+        return Ok(());
+    }
+
     pub fn set_step_parameters(
         &mut self,
         step_name: &str,

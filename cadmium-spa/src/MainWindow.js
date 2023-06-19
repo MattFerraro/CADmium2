@@ -25,9 +25,10 @@ function MainWindow({ project, forceUpdate }) {
   const [opened, setOpened] = useState(false);
   const theme = useMantineTheme();
   const [activeTab, setActiveTab] = useState('Workbench 1');
+  // this controls which step in the history is expanded
   const [stepWithAttention, setStepWithAttention] = useState(null);
-  const [mode, setMode] = useState("3D"); // can also be "sketch", changes to this affect which buttons
-  // are shown on the top bar
+  // this controls which mode the workbench is in, either "3D" or "sketch"
+  const [mode, setMode] = useState("3D");
   const [activeTool, setActiveTool] = useState(null);
 
   useEffect(() => {
@@ -43,7 +44,7 @@ function MainWindow({ project, forceUpdate }) {
     workbenchView = steps && workbench.create_view(1000);
   }
   const solids = workbenchView && workbenchView.solids;
-  console.log("solids:", solids);
+  // console.log("solids:", solids);
 
   const setStepParameters = (step_name, parameter_names, parameter_values) => {
     console.log("SETTING PARAMS");
@@ -51,9 +52,15 @@ function MainWindow({ project, forceUpdate }) {
     forceUpdate();
   };
 
+  const addSegmentToSketch = (sketch_name, x1, y1, x2, y2) => {
+    console.log("ADDING SEGMENT", sketch_name, x1, y1, x2, y2);
+    project.add_segment_to_sketch(activeTab, sketch_name, x1, y1, x2, y2);
+    forceUpdate();
+  }
+
   useHotkeys([
     ['Escape', () => {
-      console.log('escape!');
+      // console.log('escape!');
       setActiveTool(null);
     }],
   ]);
@@ -184,7 +191,13 @@ function MainWindow({ project, forceUpdate }) {
       })}
     >
 
-      {activeTab === "Workbench 1" && <WorkbenchPane workbenchView={workbenchView} activeTool={activeTool}></WorkbenchPane>}
+      {activeTab === "Workbench 1" &&
+        <WorkbenchPane
+          workbenchView={workbenchView}
+          addSegmentToSketch={addSegmentToSketch}
+          activeTool={activeTool}>
+        </WorkbenchPane>
+      }
       {activeTab === "Assembly 1" && <AssemblyPane></AssemblyPane>}
 
     </AppShell >

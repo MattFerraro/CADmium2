@@ -56,6 +56,26 @@ impl Project {
 
         return Ok(());
     }
+
+    pub fn add_segment_to_sketch(
+        &mut self,
+        workbench_name: &str,
+        sketch_name: &str,
+        x1: f64,
+        y1: f64,
+        x2: f64,
+        y2: f64,
+    ) -> Result<(), String> {
+        for wb in self.workbenches.iter_mut() {
+            if wb.name == workbench_name {
+                return wb.add_segment_to_sketch(sketch_name, x1, y1, x2, y2);
+            }
+        }
+
+        return Ok(());
+
+        // .ok_or(format!("No workbench named {}", workbench_name))?;
+    }
 }
 
 #[cfg(test)]

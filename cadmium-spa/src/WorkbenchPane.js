@@ -8,7 +8,7 @@ import * as THREE from 'three'
 
 // import { useThree } from '@react-three/fiber'
 
-function WorkbenchPane({ workbenchView, activeTool }) {
+function WorkbenchPane({ workbenchView, activeTool, addSegmentToSketch }) {
 
   let parts = null;
   if (workbenchView) {
@@ -64,13 +64,18 @@ function WorkbenchPane({ workbenchView, activeTool }) {
       })}
 
       {sketches && sketches.map((sketch, index) => {
-        return <Sketch key={index} sketch={sketch} activeTool={activeTool}></Sketch>
+        return <Sketch
+          key={index}
+          sketch={sketch}
+          activeTool={activeTool}
+          addSegmentToSketch={addSegmentToSketch}>
+        </Sketch>
       })}
     </Canvas>
   )
 }
 
-function Sketch({ sketch, activeTool }) {
+function Sketch({ sketch, activeTool, addSegmentToSketch }) {
   const [anchorPoint, setAnchorPoint] = useState(null);
   const [secondPoint, setSecondPoint] = useState(null);
   const sketchView = sketch.get("sketch");
@@ -84,11 +89,13 @@ function Sketch({ sketch, activeTool }) {
   const a = new THREE.Euler(0, 0, 0, 'XYZ');
   a.setFromRotationMatrix(m, "XYZ");
 
+  const sketchWidth = 450;
+  const sketchHeight = 300;
 
   const collisionGeometry = new THREE.PlaneGeometry(20000, 20000);
-  const visualGeometry = new THREE.PlaneGeometry(450, 300);
-  const edges = new THREE.EdgesGeometry(visualGeometry, 0.05);
-  const textPosition = new THREE.Vector3(-450 / 2, 300 / 2, 0);
+  const visualGeometry = new THREE.PlaneGeometry(sketchWidth, sketchHeight);
+  const edges = new THREE.EdgesGeometry(visualGeometry, 1);
+  const textPosition = new THREE.Vector3(-sketchWidth / 2, sketchHeight / 2, 0);
   textPosition.applyEuler(a);
 
   const onClick = (e) => {
@@ -97,7 +104,17 @@ function Sketch({ sketch, activeTool }) {
         setAnchorPoint(e.point);
       } else {
         // A line segment has been finished!
-        console.log("New segment: ", anchorPoint, e.point);
+        // console.log("New segment: ", anchorPoint, e.point);
+        // console.log(e.point);
+
+        const x1 = three_x.dot(anchorPoint);
+        const y1 = three_y.dot(anchorPoint);
+
+        const x2 = three_x.dot(e.point);
+        const y2 = three_y.dot(e.point);
+
+        // console.log("in xy: ", x2, y2);
+        addSegmentToSketch(sketch.get("name"), x1, y1, x2, y2);
         setAnchorPoint(e.point);
         setSecondPoint(null);
       }
@@ -276,7 +293,7 @@ function Wireframe({ mesh, style }) {
   geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
   geometry.setAttribute('normal', new THREE.BufferAttribute(normals, 3));
   geometry.setIndex(new THREE.BufferAttribute(indices, 1));
-  const edges = new THREE.EdgesGeometry(geometry, 0.05);
+  const edges = new THREE.EdgesGeometry(geometry, 1);
   const line = new THREE.LineSegments(edges, new THREE.LineBasicMaterial({ color: 0x000000 }));
 
   return (
@@ -308,9 +325,9 @@ function Wireframe({ mesh, style }) {
       >
         <lineSegments geometry={edges} material={line.material} />
         <meshStandardMaterial
-          polygonOffset={true}
-          polygonOffsetFactor={1} // positive value pushes polygon further away
-          polygonOffsetUnits={1}
+          // polygonOffset={true}
+          // polygonOffsetFactor={1} // positive value pushes polygon further away
+          // polygonOffsetUnits={1}
           color={hovered ? 'hotpink' : '#006B3C'}
           side={THREE.DoubleSide}
         />

@@ -43,12 +43,15 @@ npm run elect
 
 # TODO (code only)
 
+- sketching: when a user closes a polygon, have it snap to the starting vertex!
 - Remove the "id" field from cadmium::sketch::Point
 - Simplify the cadmium::common:Plane field to remove extra fields
 - cadmium::sketch::Ring should be a struct not a type alias
 - combine all the wasm_bindgen annotations into the one primary cadmium crate?
 - replace the JS Map stuff with something simpler (map of sketches, etc)
 - check: do we get extra segments from .find_faces()?
+- fix edge rendering for inside corners
+- fix camera clipping when geometry gets too close
 
 # TODO (features)
 
