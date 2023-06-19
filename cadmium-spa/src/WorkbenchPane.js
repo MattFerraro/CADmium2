@@ -82,21 +82,29 @@ function Sketch({ sketch }) {
   const a = new THREE.Euler(0, 0, 0, 'XYZ');
   a.setFromRotationMatrix(m, "XYZ");
 
-  const geometry = new THREE.PlaneGeometry(20000, 20000);
+
+  const collisionGeometry = new THREE.PlaneGeometry(20000, 20000);
+  const visualGeometry = new THREE.PlaneGeometry(450, 300);
+  const edges = new THREE.EdgesGeometry(visualGeometry, 0.05);
+  const textPosition = new THREE.Vector3(-450 / 2, 300 / 2, 0);
+  textPosition.applyEuler(a);
 
   const onClick = (e) => {
     console.log("Sketch click: ", e.point);
   }
 
-  const size = 5;
+  const size = 7;
   return <>
     <mesh rotation={a} onClick={onClick}>
-      <primitive object={geometry}></primitive>
+      <primitive object={collisionGeometry}></primitive>
       <meshStandardMaterial
         color="#FF0000" opacity={0.0} transparent
         side={THREE.DoubleSide}
         depthWrite={false}
       />
+    </mesh>
+    <mesh rotation={a}>
+      <lineSegments geometry={edges} material={new THREE.LineBasicMaterial({ color: 0x000000 })} />
     </mesh>
 
     <Text
@@ -105,7 +113,7 @@ function Sketch({ sketch }) {
       anchorX="left" // default
       anchorY="top" // default
       depthOffset={0}
-      position={[0, 0, 0]}
+      position={textPosition}
       rotation={a}
     >
       {sketch.get("name")}
@@ -299,9 +307,8 @@ function Plane({ plane }) {
   const a = new THREE.Euler(0, 0, 0, 'XYZ');
   a.setFromRotationMatrix(m, "XYZ");
 
-  const size = 5;
+  const size = 7;
   return <>
-    {/* <Solid mesh={mesh} style={"plane"} ></Solid> */}
     <Wireframe mesh={mesh} style={"plane"}></Wireframe>
     <Text
       scale={[size, size, size]}
