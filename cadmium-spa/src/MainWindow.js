@@ -60,7 +60,6 @@ function MainWindow({ project, forceUpdate }) {
 
   useHotkeys([
     ['Escape', () => {
-      // console.log('escape!');
       setActiveTool(null);
     }],
   ]);

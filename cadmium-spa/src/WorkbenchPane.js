@@ -1,5 +1,5 @@
 import './App.css'
-import React, { useCallback, useRef, useState } from 'react'
+import React, { useEffect, useMemo, useCallback, useRef, useState } from 'react'
 import { Canvas, useFrame } from '@react-three/fiber'
 import { CameraControls, Environment, useHelper, Text, Line } from '@react-three/drei'
 import * as THREE from 'three'
@@ -43,7 +43,7 @@ function WorkbenchPane({ workbenchView, activeTool, addSegmentToSketch }) {
   const overallScale = 100;
 
   return (
-    <Canvas linear={true} frameloop='always' orthographic camera={{ far: 50000, near: 0.0, zoom: 4.0, position: [1 * overallScale, -1 * overallScale, 1 * overallScale], up: [0, 0, 1] }} style={{ height: '100%', cursor: activeTool === "line" ? "crosshair" : "auto" }}>
+    <Canvas linear={true} frameloop='always' orthographic camera={{ far: 50000, near: 0.0, zoom: 4.0, position: [1 * overallScale, 0 * overallScale, 0 * overallScale], up: [0, 0, 1] }} style={{ height: '100%', cursor: activeTool === "line" ? "crosshair" : "auto" }}>
       {/* <Environment files={studio_2_1k} /> */}
 
       <CameraControls ref={mouseConfig} dollyToCursor={true} maxPolarAngle={900} />
@@ -76,18 +76,31 @@ function WorkbenchPane({ workbenchView, activeTool, addSegmentToSketch }) {
 }
 
 function Sketch({ sketch, activeTool, addSegmentToSketch }) {
+  console.log("RENDER SKETCH with faces: ", sketch.get("sketch").faces.length, " and segments: ", sketch.get("sketch").segments.length);
+
   const [anchorPoint, setAnchorPoint] = useState(null);
   const [secondPoint, setSecondPoint] = useState(null);
-  const sketchView = sketch.get("sketch");
+  const [heldPoint, setHeldPoint] = useState(null);
+  const [cursorSnapped, setCursorSnapped] = useState(false);
+  const sketchView = useMemo(() => {
+    return sketch.get("sketch")
+  }, [sketch]);
 
-  const frame = sketchView.coordinate_frame;
-  const three_x = new THREE.Vector3(frame.x_axis.x, frame.x_axis.y, frame.x_axis.z);
-  const three_y = new THREE.Vector3(frame.y_axis.x, frame.y_axis.y, frame.y_axis.z);
-  const three_z = new THREE.Vector3(frame.normal.x, frame.normal.y, frame.normal.z);
-  const m = new THREE.Matrix4();
-  m.makeBasis(three_x, three_y, three_z);
-  const a = new THREE.Euler(0, 0, 0, 'XYZ');
-  a.setFromRotationMatrix(m, "XYZ");
+  const { three_x, three_y, three_z } = useMemo(() => {
+    const frame = sketchView.coordinate_frame;
+    const three_x = new THREE.Vector3(frame.x_axis.x, frame.x_axis.y, frame.x_axis.z);
+    const three_y = new THREE.Vector3(frame.y_axis.x, frame.y_axis.y, frame.y_axis.z);
+    const three_z = new THREE.Vector3(frame.normal.x, frame.normal.y, frame.normal.z);
+    return { three_x, three_y, three_z }
+  }, [sketchView]);
+
+  const eulerAngles = useMemo(() => {
+    const m = new THREE.Matrix4();
+    m.makeBasis(three_x, three_y, three_z);
+    const ea = new THREE.Euler(0, 0, 0, 'XYZ');
+    ea.setFromRotationMatrix(m, "XYZ");
+    return ea
+  }, [three_x, three_y, three_z]);
 
   const sketchWidth = 450;
   const sketchHeight = 300;
@@ -96,27 +109,31 @@ function Sketch({ sketch, activeTool, addSegmentToSketch }) {
   const visualGeometry = new THREE.PlaneGeometry(sketchWidth, sketchHeight);
   const edges = new THREE.EdgesGeometry(visualGeometry, 1);
   const textPosition = new THREE.Vector3(-sketchWidth / 2, sketchHeight / 2, 0);
-  textPosition.applyEuler(a);
+  textPosition.applyEuler(eulerAngles);
 
   const onClick = (e) => {
     if (activeTool === "line") {
       if (anchorPoint === null) {
         setAnchorPoint(e.point);
       } else {
-        // A line segment has been finished!
-        // console.log("New segment: ", anchorPoint, e.point);
-        // console.log(e.point);
-
         const x1 = three_x.dot(anchorPoint);
         const y1 = three_y.dot(anchorPoint);
 
-        const x2 = three_x.dot(e.point);
-        const y2 = three_y.dot(e.point);
+        let x2, y2;
+        if (cursorSnapped) {
+          // x2 = secondPoint.x;
+          // y2 = secondPoint.y;
+          x2 = heldPoint.x;
+          y2 = heldPoint.y;
+        } else {
+          x2 = three_x.dot(e.point);
+          y2 = three_y.dot(e.point);
+        }
 
-        // console.log("in xy: ", x2, y2);
         addSegmentToSketch(sketch.get("name"), x1, y1, x2, y2);
-        setAnchorPoint(e.point);
+        setAnchorPoint(new THREE.Vector3(secondPoint.x, secondPoint.y, secondPoint.z));
         setSecondPoint(null);
+        setCursorSnapped(false);
       }
     }
   }
@@ -124,15 +141,36 @@ function Sketch({ sketch, activeTool, addSegmentToSketch }) {
   const onMouseMove = (e) => {
     if (activeTool === "line") {
       if (anchorPoint !== null) {
-        setSecondPoint(e.point);
+        if (!cursorSnapped) {
+          setSecondPoint(e.point);
+        }
       }
-
     }
   }
 
+  const setSecondaryCallback = useCallback((point, sketch_point) => {
+    console.log("Setting secondary!", point, sketch_point);
+    setCursorSnapped(true);
+    setHeldPoint(new THREE.Vector3(sketch_point[0], sketch_point[1], 0));
+    setSecondPoint(new THREE.Vector3(point[0], point[1], point[2]));
+  }, []);
+
+  const releaseSecondaryCallback = useCallback(() => {
+    console.log("Releasing secondary!");
+    setCursorSnapped(false);
+  }, []);
+
+  useEffect(() => {
+    if (activeTool === null) {
+      setAnchorPoint(null);
+      setSecondPoint(null);
+      setHeldPoint(null);
+    }
+  }, [activeTool])
+
   const size = 7;
   return <>
-    {secondPoint &&
+    {anchorPoint && secondPoint && activeTool === "line" &&
       <Line
         points={[
           [anchorPoint.x, anchorPoint.y, anchorPoint.z],
@@ -143,7 +181,7 @@ function Sketch({ sketch, activeTool, addSegmentToSketch }) {
       />
     }
 
-    <mesh rotation={a} onClick={onClick} onPointerMove={onMouseMove}>
+    <mesh rotation={eulerAngles} onClick={onClick} onPointerMove={onMouseMove}>
       <primitive object={collisionGeometry}></primitive>
       <meshStandardMaterial
         color="#FF0000" opacity={0.0} transparent
@@ -151,7 +189,7 @@ function Sketch({ sketch, activeTool, addSegmentToSketch }) {
         depthWrite={false}
       />
     </mesh>
-    <mesh rotation={a}>
+    <mesh rotation={eulerAngles}>
       <lineSegments geometry={edges} material={new THREE.LineBasicMaterial({ color: 0x000000 })} />
     </mesh>
 
@@ -162,7 +200,7 @@ function Sketch({ sketch, activeTool, addSegmentToSketch }) {
       anchorY="top" // default
       depthOffset={0}
       position={textPosition}
-      rotation={a}
+      rotation={eulerAngles}
     >
       {sketch.get("name")}
     </Text>
@@ -175,7 +213,7 @@ function Sketch({ sketch, activeTool, addSegmentToSketch }) {
         ]}
         color={"#000000"}
         lineWidth={2}
-      // segments  // If true, renders a THREE.LineSegments2. Otherwise, renders a THREE.Line2
+        depthWrite={false}
       />
     })}
 
@@ -207,7 +245,7 @@ function Sketch({ sketch, activeTool, addSegmentToSketch }) {
       }
 
       const geometry = new THREE.ShapeGeometry(face_shape);
-      return <mesh key={index} rotation={a}>
+      return <mesh key={index} rotation={eulerAngles}>
         <primitive object={geometry}></primitive>
         <meshStandardMaterial
           color="#006B3C" opacity={0.2} transparent
@@ -215,6 +253,18 @@ function Sketch({ sketch, activeTool, addSegmentToSketch }) {
           depthWrite={false}
         />
       </mesh>
+    })}
+
+    {sketchView && sketchView.segments.map((segment, index) => {
+      const segment2d = sketchView.segments_2d[index];
+      // console.log("Segment: ", segment, segment2d);
+      return <SketchPoint
+        key={index}
+        x={segment.start.x} y={segment.start.y} z={segment.start.z}
+        sketch_x={segment2d.start.x} sketch_y={segment2d.start.y}
+        setSecondaryCallback={setSecondaryCallback}
+        releaseSecondaryCallback={releaseSecondaryCallback}
+      ></SketchPoint >
     })}
   </>
 
@@ -394,5 +444,42 @@ function Box(props) {
     </mesh>
   )
 }
+
+const SketchPoint = React.memo(function SketchPoint({ activeTool, x, y, z, sketch_x, sketch_y, setSecondaryCallback, releaseSecondaryCallback }) {
+  const point = [x, y, z];
+  const sketch_point = [sketch_x, sketch_y];
+  const [hovered, hover] = useState(false)
+  const dotGeometry = new THREE.BufferGeometry();
+  dotGeometry.setAttribute('position', new THREE.BufferAttribute(new Float32Array(point), 3));
+  const dotMaterial = new THREE.PointsMaterial({
+    size: hovered ? 16 : 7,
+    color: 0xff0000,
+    depthWrite: false,
+  });
+  const dot = new THREE.Points(dotGeometry, dotMaterial);
+
+  const onPointerOver = useCallback((event) => {
+    // console.log("pointer over: ", point);
+    setSecondaryCallback(point, sketch_point);
+    hover(true)
+  }, [x, y, z, sketch_x, sketch_y])
+
+  const onPointerOut = useCallback((event) => {
+    // console.log("off: ", point);
+    releaseSecondaryCallback();
+    hover(false)
+  }, [])
+
+  // const onPointerClick = useCallback((event) => {
+  //   console.log("CLICKED ON: ", point);
+  // }, [x, y, z]);
+
+  return <mesh
+    // onPointerClick={onPointerClick}
+    onPointerOver={onPointerOver}
+    onPointerOut={onPointerOut}>
+    <primitive object={dot}></primitive>
+  </mesh>
+});
 
 export default WorkbenchPane
