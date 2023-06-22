@@ -47,21 +47,21 @@ impl Workbench {
 
         // Original box
         let a = Point2D::new(-width / 2.0, -depth / 2.0, "A");
-        let b = Point2D::new(-width / 2.0, depth / 2.0, "B");
-        let c = Point2D::new(width / 2.0, depth / 2.0, "C");
-        let d = Point2D::new(width / 2.0, -depth / 2.0, "D");
+        let b = Point2D::new(-width / 2.0, depth / 2.0, "A");
+        let c = Point2D::new(width / 2.0, depth / 2.0, "A");
+        let d = Point2D::new(width / 2.0, -depth / 2.0, "A");
 
         // Duplicate off to the side
-        let e = Point2D::new(-width / 2.0 + width + sep, -depth / 2.0, "E");
-        let f = Point2D::new(-width / 2.0 + width + sep, depth / 2.0, "F");
-        let g = Point2D::new(width / 2.0 + width + sep, depth / 2.0, "G");
-        let h = Point2D::new(width / 2.0 + width + sep, -depth / 2.0, "H");
+        let e = Point2D::new(-width / 2.0 + width + sep, -depth / 2.0, "A");
+        let f = Point2D::new(-width / 2.0 + width + sep, depth / 2.0, "A");
+        let g = Point2D::new(width / 2.0 + width + sep, depth / 2.0, "A");
+        let h = Point2D::new(width / 2.0 + width + sep, -depth / 2.0, "A");
 
         // Add a hole to the original box
-        let i = Point2D::new(-width / 4.0, -depth / 4.0, "I");
-        let j = Point2D::new(-width / 4.0, depth / 4.0, "J");
-        let k = Point2D::new(width / 4.0, depth / 4.0, "K");
-        let l = Point2D::new(width / 4.0, -depth / 4.0, "L");
+        let i = Point2D::new(-width / 4.0, -depth / 4.0, "A");
+        let j = Point2D::new(-width / 4.0, depth / 4.0, "A");
+        let k = Point2D::new(width / 4.0, depth / 4.0, "A");
+        let l = Point2D::new(width / 4.0, -depth / 4.0, "A");
 
         let segments = Segment::link(vec![a, b, c, d], true);
         let mut sketch1 = Sketch::new();
@@ -233,8 +233,8 @@ impl Workbench {
                     plane,
                 } => {
                     if name == sketch_name {
-                        let start = Point2D::new(x1, y1, "start");
-                        let end = Point2D::new(x2, y2, "end");
+                        let start = Point2D::new(x1, y1, "A");
+                        let end = Point2D::new(x2, y2, "A");
                         let segments = Segment::link(vec![start, end], false);
 
                         sketch.add_segments(segments);

@@ -897,4 +897,27 @@ mod tests {
             println!("Found Face: {:?}", f);
         }
     }
+
+    #[test]
+    fn simple_rings() {
+        let a = Point::new(-1.0, 0.0, "A");
+        let b = Point::new(1.0, 0.0, "A");
+        let c = Point::new(0.0, 1.0, "A");
+        let line_ab = Line::new(a.clone(), b.clone());
+        let line_bc = Line::new(b.clone(), c.clone());
+        let line_ca = Line::new(c.clone(), a.clone());
+        let segments = vec![
+            Segment::Line(line_ab),
+            Segment::Line(line_bc),
+            Segment::Line(line_ca),
+        ];
+        let mut sketch1 = Sketch::new();
+        sketch1.add_segments(segments);
+
+        let rings = sketch1.find_rings(false);
+        assert_eq!(rings.len(), 2);
+        assert_eq!(rings[0].len(), 3);
+        assert_eq!(rings[1].len(), 3);
+        println!("Ring: {:?}", rings[0]);
+    }
 }

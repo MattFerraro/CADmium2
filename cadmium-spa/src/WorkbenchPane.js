@@ -1,6 +1,6 @@
 import './App.css'
 import React, { useEffect, useMemo, useCallback, useRef, useState } from 'react'
-import { Canvas, useFrame } from '@react-three/fiber'
+import { Canvas, render, useFrame } from '@react-three/fiber'
 import { CameraControls, Environment, useHelper, Text, Line } from '@react-three/drei'
 import * as THREE from 'three'
 // import studio_2_1k from './images/studio_2_1k.hdr'
@@ -8,8 +8,11 @@ import * as THREE from 'three'
 
 // import { useThree } from '@react-three/fiber'
 
-function WorkbenchPane({ workbenchView, activeTool, addSegmentToSketch }) {
+// const sab = new SharedArrayBuffer(1024);
+// const ta = new Uint8Array(sab);
+let someGlobalValue = 0;
 
+function WorkbenchPane({ workbenchView, activeTool, addSegmentToSketch }) {
   let parts = null;
   if (workbenchView) {
     parts = workbenchView.solids.map((solid) => solid.get("solid").get_mesh());
@@ -76,12 +79,58 @@ function WorkbenchPane({ workbenchView, activeTool, addSegmentToSketch }) {
 }
 
 function Sketch({ sketch, activeTool, addSegmentToSketch }) {
-  console.log("RENDER SKETCH with faces: ", sketch.get("sketch").faces.length, " and segments: ", sketch.get("sketch").segments.length);
+  // console.log("RENDER SKETCH with faces: ", sketch.get("sketch").faces.length, " and segments: ", sketch.get("sketch").segments.length);
 
-  const [anchorPoint, setAnchorPoint] = useState(null);
-  const [secondPoint, setSecondPoint] = useState(null);
-  const [heldPoint, setHeldPoint] = useState(null);
-  const [cursorSnapped, setCursorSnapped] = useState(false);
+  const sketchName = useMemo(() => {
+    return sketch.get("name")
+  }, [sketch]);
+
+  // we can use the pointQueue as a...queue!
+  const [pointQueue, setPointQueue] = useState([]);
+  const pushPoint = useCallback((newPoint) => {
+    setPointQueue([...pointQueue, newPoint]);
+  }, [pointQueue, setPointQueue]);
+  const popNewestPoint = useCallback(() => {
+    const newQueue = pointQueue.slice(0, pointQueue.length - 1);
+    setPointQueue(newQueue);
+  }, [pointQueue, setPointQueue]);
+  const popOldestPoint = useCallback(() => {
+    const newQueue = pointQueue.slice(1);
+    setPointQueue(newQueue);
+  }, [pointQueue, setPointQueue]);
+  const clearQueue = useCallback(() => {
+    setPointQueue([]);
+  }, [setPointQueue]);
+  const replaceNewestPoint = useCallback((newPoint) => {
+    const newQueue = pointQueue.slice(0, pointQueue.length - 1);
+    newQueue.push(newPoint);
+    setPointQueue(newQueue);
+  }, [pointQueue, setPointQueue]);
+
+  useEffect(() => {
+    if (activeTool === "line") {
+      let numClicked = 0;
+      for (let i = 0; i < pointQueue.length; i++) {
+        if (pointQueue[i].type === "clicked") {
+          numClicked += 1;
+        }
+      }
+
+      if (numClicked === 2) {
+        addSegmentToSketch(
+          sketchName,
+          pointQueue[0].sketch_x,
+          pointQueue[0].sketch_y,
+          pointQueue[1].sketch_x,
+          pointQueue[1].sketch_y);
+        popOldestPoint();
+      }
+    }
+    if (pointQueue.length > 0) {
+      console.log("Point Queue Changed: ", pointQueue.length, pointQueue[pointQueue.length - 1].type);
+    }
+  }, [pointQueue, popOldestPoint]);
+
   const sketchView = useMemo(() => {
     return sketch.get("sketch")
   }, [sketch]);
@@ -112,69 +161,135 @@ function Sketch({ sketch, activeTool, addSegmentToSketch }) {
   textPosition.applyEuler(eulerAngles);
 
   const onClick = (e) => {
-    if (activeTool === "line") {
-      if (anchorPoint === null) {
-        setAnchorPoint(e.point);
-      } else {
-        const x1 = three_x.dot(anchorPoint);
-        const y1 = three_y.dot(anchorPoint);
-
-        let x2, y2;
-        if (cursorSnapped) {
-          // x2 = secondPoint.x;
-          // y2 = secondPoint.y;
-          x2 = heldPoint.x;
-          y2 = heldPoint.y;
-        } else {
-          x2 = three_x.dot(e.point);
-          y2 = three_y.dot(e.point);
-        }
-
-        addSegmentToSketch(sketch.get("name"), x1, y1, x2, y2);
-        setAnchorPoint(new THREE.Vector3(secondPoint.x, secondPoint.y, secondPoint.z));
-        setSecondPoint(null);
-        setCursorSnapped(false);
-      }
+    if (pointQueue.length === 0) {
+      // this should never happen. If it did IDK what to do.
+      return;
+    }
+    const lastPoint = pointQueue[pointQueue.length - 1];
+    if (lastPoint.type === "moved" || lastPoint.type === "snapped") {
+      replaceNewestPoint({
+        x: lastPoint.x,
+        y: lastPoint.y,
+        z: lastPoint.z,
+        sketch_x: three_x.dot(lastPoint),
+        sketch_y: three_y.dot(lastPoint),
+        type: "clicked"
+      });
     }
   }
 
   const onMouseMove = (e) => {
-    if (activeTool === "line") {
-      if (anchorPoint !== null) {
-        if (!cursorSnapped) {
-          setSecondPoint(e.point);
-        }
+    if (activeTool === null) {
+      return;
+    }
+    if (pointQueue.length === 0 || pointQueue[pointQueue.length - 1].type === "clicked") {
+      pushPoint({
+        x: e.point.x,
+        y: e.point.y,
+        z: e.point.z,
+        sketch_x: three_x.dot(e.point),
+        sketch_y: three_y.dot(e.point),
+        type: "moved"
+      });
+    } else {
+      if (someGlobalValue === 1) {
+        return;
+      }
+      const lastPoint = pointQueue[pointQueue.length - 1];
+      if (lastPoint.type === "moved") {
+        replaceNewestPoint({
+          x: e.point.x,
+          y: e.point.y,
+          z: e.point.z,
+          sketch_x: three_x.dot(e.point),
+          sketch_y: three_y.dot(e.point),
+          type: "moved"
+        });
       }
     }
   }
 
-  const setSecondaryCallback = useCallback((point, sketch_point) => {
-    console.log("Setting secondary!", point, sketch_point);
-    setCursorSnapped(true);
-    setHeldPoint(new THREE.Vector3(sketch_point[0], sketch_point[1], 0));
-    setSecondPoint(new THREE.Vector3(point[0], point[1], point[2]));
-  }, []);
+  const onPointerOver = (point, sketch_point) => {
+    console.log("on pointer over CB");
+    if (pointQueue.length > 0 && pointQueue[pointQueue.length - 1].type === "moved") {
+      console.log("replace with snapped!");
+      replaceNewestPoint({
+        x: point[0],
+        y: point[1],
+        z: point[2],
+        sketch_x: sketch_point[0],
+        sketch_y: sketch_point[1],
+        type: "snapped"
+      });
+      someGlobalValue = 1;
+    }
+  }
 
-  const releaseSecondaryCallback = useCallback(() => {
-    console.log("Releasing secondary!");
-    setCursorSnapped(false);
-  }, []);
+  const onPointerOut = () => {
+    console.log("on pointer out CB");
+    if (pointQueue.length > 0 && pointQueue[pointQueue.length - 1].type === "snapped") {
+      console.log("Poppped!");
+      popNewestPoint();
+      someGlobalValue = 0;
+    }
+  }
 
   useEffect(() => {
-    if (activeTool === null) {
-      setAnchorPoint(null);
-      setSecondPoint(null);
-      setHeldPoint(null);
+    console.log("Clearing queue!");
+    clearQueue();
+
+  }, [activeTool, clearQueue]);
+
+  // const onPointerOverCb = useCallback((point, sketch_point) => {
+  //   console.log("on pointer over", point, sketch_point);
+
+  // here just push the point to a "most recent hovered point" state
+  // then consider most recent hovered point in the mouse move and click handlers
+  // the goal is NOT to pass the queue, or any callback which depend on the queue,
+  // to the SketchPoint component. If we can avoid doing that, then we won't have
+  // to rerender the SketchPoint component every time the queue changes.
+  // }, []);
+
+
+  const renderablePoints = useMemo(() => {
+    console.log("recomputing renderable Points");
+    const thePoints = [];
+    const uniqueKeys = new Set();
+    for (let i = 0; i < sketchView.segments.length; i++) {
+      const segment3d = sketchView.segments[i];
+      const segment2d = sketchView.segments_2d[i];
+
+      const start_point_3d = segment3d.start;
+      const end_point_3d = segment3d.end;
+
+      const start_point_2d = segment2d.start;
+      const end_point_2d = segment2d.end;
+
+      const start_key_string = start_point_3d.x.toFixed(6) + "," + start_point_3d.y.toFixed(6) + "," + start_point_3d.z.toFixed(6);
+      if (!uniqueKeys.has(start_key_string)) {
+        uniqueKeys.add(start_key_string);
+        thePoints.push({ "3d": start_point_3d, "2d": start_point_2d, "key": start_key_string });
+      }
+
+      const end_key_string = end_point_3d.x.toFixed(6) + "," + end_point_3d.y.toFixed(6) + "," + end_point_3d.z.toFixed(6);
+      if (!uniqueKeys.has(end_key_string)) {
+        uniqueKeys.add(end_key_string);
+        thePoints.push({ "3d": end_point_3d, "2d": end_point_2d, "key": end_key_string });
+      }
+
     }
-  }, [activeTool])
+    return thePoints;
+  }, [sketchView]);
+
+
 
   const size = 7;
   return <>
-    {anchorPoint && secondPoint && activeTool === "line" &&
-      <Line
+    {activeTool === "line" && pointQueue.length >= 2 &&
+      < Line
         points={[
-          [anchorPoint.x, anchorPoint.y, anchorPoint.z],
-          [secondPoint.x, secondPoint.y, secondPoint.z],
+          [pointQueue[0].x, pointQueue[0].y, pointQueue[0].z],
+          [pointQueue[1].x, pointQueue[1].y, pointQueue[1].z],
         ]}
         color={"#000000"}
         lineWidth={2}
@@ -255,15 +370,18 @@ function Sketch({ sketch, activeTool, addSegmentToSketch }) {
       </mesh>
     })}
 
-    {sketchView && sketchView.segments.map((segment, index) => {
-      const segment2d = sketchView.segments_2d[index];
+    {renderablePoints.map((pointObject, index) => {
+      // const segment2d = sketchView.segments_2d[index];
       // console.log("Segment: ", segment, segment2d);
+      const point_2d = pointObject['2d'];
+      const point_3d = pointObject['3d'];
+      const keyName = pointObject['key'];
       return <SketchPoint
-        key={index}
-        x={segment.start.x} y={segment.start.y} z={segment.start.z}
-        sketch_x={segment2d.start.x} sketch_y={segment2d.start.y}
-        setSecondaryCallback={setSecondaryCallback}
-        releaseSecondaryCallback={releaseSecondaryCallback}
+        key={keyName}
+        x={point_3d.x} y={point_3d.y} z={point_3d.z}
+        sketch_x={point_2d.x} sketch_y={point_2d.y}
+        onPointerOverCb={onPointerOver}
+        onPointerOutCb={onPointerOut}
       ></SketchPoint >
     })}
   </>
@@ -321,13 +439,6 @@ function Solid({ mesh, style }) {
         color="#006B3C" opacity={0.1} transparent
         side={THREE.DoubleSide}
       />}
-
-
-      {/* <meshNormalMaterial
-        color={hovered ? 'hotpink' : '#5cffb7'}
-        side={THREE.DoubleSide}
-      /> */}
-      {/* <VertexNormalsHelper args={[ref, 0.2, 0x00ff00, 1]}></VertexNormalsHelper> */}
     </mesh>
   )
 }
@@ -386,8 +497,6 @@ function Wireframe({ mesh, style }) {
   )
 }
 
-
-
 function Plane({ plane }) {
   const actualPlane = plane.get("plane");
   const mesh = actualPlane.get_mesh();
@@ -445,41 +554,42 @@ function Box(props) {
   )
 }
 
-const SketchPoint = React.memo(function SketchPoint({ activeTool, x, y, z, sketch_x, sketch_y, setSecondaryCallback, releaseSecondaryCallback }) {
+const SketchPoint = React.memo(function SketchPoint({ x, y, z, sketch_x, sketch_y, onPointerOverCb, onPointerOutCb }) {
   const point = [x, y, z];
   const sketch_point = [sketch_x, sketch_y];
   const [hovered, hover] = useState(false)
-  const dotGeometry = new THREE.BufferGeometry();
-  dotGeometry.setAttribute('position', new THREE.BufferAttribute(new Float32Array(point), 3));
-  const dotMaterial = new THREE.PointsMaterial({
-    size: hovered ? 16 : 7,
-    color: 0xff0000,
-    depthWrite: false,
-  });
-  const dot = new THREE.Points(dotGeometry, dotMaterial);
+
+  const dot = useMemo(() => {
+    console.log("rendering a new dot");
+    const dotGeometry = new THREE.BufferGeometry();
+    dotGeometry.setAttribute('position', new THREE.BufferAttribute(new Float32Array(point), 3));
+    const d = new THREE.Points(dotGeometry);
+    return d;
+  }, [x, y, z]);
 
   const onPointerOver = useCallback((event) => {
-    // console.log("pointer over: ", point);
-    setSecondaryCallback(point, sketch_point);
+    console.log("pointer over: ", point);
+
+    onPointerOverCb(point, sketch_point);
     hover(true)
-  }, [x, y, z, sketch_x, sketch_y])
+    // event.nativeEvent.preventDefault();
+  }, [x, y, z, sketch_x, sketch_y, hover, onPointerOverCb])
 
   const onPointerOut = useCallback((event) => {
-    // console.log("off: ", point);
-    releaseSecondaryCallback();
-    hover(false)
-  }, [])
 
-  // const onPointerClick = useCallback((event) => {
-  //   console.log("CLICKED ON: ", point);
-  // }, [x, y, z]);
+    onPointerOutCb(point, sketch_point);
+    hover(false)
+    // event.nativeEvent.preventDefault();
+  }, [hover, onPointerOutCb])
 
   return <mesh
     // onPointerClick={onPointerClick}
     onPointerOver={onPointerOver}
     onPointerOut={onPointerOut}>
-    <primitive object={dot}></primitive>
-  </mesh>
+    <primitive object={dot}>
+      <pointsMaterial depthWrite={false} color={"#FF0000"} size={hovered ? 16 : 7}></pointsMaterial>
+    </primitive>
+  </mesh >
 });
 
 export default WorkbenchPane

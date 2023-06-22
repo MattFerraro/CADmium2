@@ -20,8 +20,6 @@ import { useHotkeys } from '@mantine/hooks';
 // Cadmium green:   #006B3C
 
 function MainWindow({ project, forceUpdate }) {
-
-
   const [opened, setOpened] = useState(false);
   const theme = useMantineTheme();
   const [activeTab, setActiveTab] = useState('Workbench 1');
