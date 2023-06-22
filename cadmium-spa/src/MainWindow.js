@@ -1,6 +1,5 @@
 import './App.css'
 import React, { useEffect, useState } from 'react'
-import { useDisclosure } from '@mantine/hooks'
 import {
   NumberInput,
   Collapse,
@@ -14,6 +13,7 @@ import {
   Burger,
   useMantineTheme,
   Button,
+  MultiSelect,
   Tabs,
   ActionIcon,
 } from '@mantine/core'
@@ -129,7 +129,7 @@ function MainWindow({ project, forceUpdate }) {
               let solid_name = solid.get('name')
               let solid_obj = solid.get('solid')
 
-              let image = <img src={cube_min} width="30px"></img>
+              let image = <img alt={""} src={cube_min} width="30px"></img>
 
               return (
                 <GeometryElement
@@ -202,7 +202,7 @@ function MainWindow({ project, forceUpdate }) {
 
             <div className="header-row">
               <div className="logo-container">
-                <img src={logo} width={40}></img>
+                <img alt={""} src={logo} width={40}></img>
                 <Text fz="xl" fw={700}>
                   CADmium
                 </Text>
@@ -212,10 +212,10 @@ function MainWindow({ project, forceUpdate }) {
                 {mode === '3D' && (
                   <>
                     <ActionIcon size={'lg'} variant="subtle">
-                      <img src={sketch_min} width="30px"></img>
+                      <img alt={""} src={sketch_min} width="30px"></img>
                     </ActionIcon>
                     <ActionIcon size={'lg'} variant="subtle">
-                      <img src={extrude_min} width="30px"></img>
+                      <img alt={""} src={extrude_min} width="30px"></img>
                     </ActionIcon>
                   </>
                 )}
@@ -407,8 +407,11 @@ const SketchStepForm = (step, setStepParameters, close) => {
 const ExtrudeStepForm = (step, setStepParameters, close) => {
   const [depthValue, setDepthValue] = useState(20)
 
+  console.log("Extrude step form:", step);
+
+  const [faces, setFaces] = useState(['matt']);
+
   function onSave(e) {
-    // console.log("save:", depthValue, step.name, activeTab);
     setStepParameters(step.name, ['depth'], [depthValue])
     close()
   }
@@ -416,12 +419,20 @@ const ExtrudeStepForm = (step, setStepParameters, close) => {
   return (
     <div className="options-form">
       <div className="options-form-element">
+        <MultiSelect
+          label={"Faces"}
+          clearable
+          value={faces}
+          onChange={setFaces}
+          data={[{ value: "matt", label: "Matt" }]} />
+      </div>
+
+      <div className="options-form-element">
         <NumberInput
           defaultValue={depthValue}
           placeholder="Depth"
           label="Depth"
           precision={3}
-          size="md"
           value={depthValue}
           onChange={setDepthValue}
           hideControls

@@ -48,7 +48,6 @@ npx prettier --write .
 
 # TODO (code only)
 
-- sketching: when a user closes a polygon, have it snap to the starting vertex!
 - Remove the "id" field from cadmium::sketch::Point
 - Simplify the cadmium::common:Plane field to remove extra fields
 - cadmium::sketch::Ring should be a struct not a type alias
@@ -61,7 +60,6 @@ npx prettier --write .
 # TODO (features)
 
 - add sketch.get_bounds(), either to sketch or sketchView or both
-- for a sketch, draw a rectangle and put the sketch name on it
 - add ability to edit the name of a step
 - on mouseover for a part name, highlight it in 3D
 - boolean operations
@@ -73,5 +71,5 @@ npx prettier --write .
 # TODO (Extraordinarily difficult)
 
 - 2D sketch constraint solver
-- Fillters
+- Fillets
 - Chamfers

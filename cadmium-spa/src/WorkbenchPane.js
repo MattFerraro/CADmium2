@@ -1,10 +1,9 @@
 import './App.css'
 import React, { useEffect, useMemo, useCallback, useRef, useState } from 'react'
-import { Canvas, render, useFrame } from '@react-three/fiber'
+import { Canvas } from '@react-three/fiber'
 import {
   CameraControls,
-  Environment,
-  useHelper,
+  // Environment,
   Text,
   Line,
 } from '@react-three/drei'
@@ -119,8 +118,6 @@ function WorkbenchPane({ workbenchView, activeTool, addSegmentToSketch }) {
 }
 
 function Sketch({ sketch, activeTool, addSegmentToSketch }) {
-  // console.log("RENDER SKETCH with faces: ", sketch.get("sketch").faces.length, " and segments: ", sketch.get("sketch").segments.length);
-
   const sketchName = useMemo(() => {
     return sketch.get('name')
   }, [sketch])
@@ -186,7 +183,7 @@ function Sketch({ sketch, activeTool, addSegmentToSketch }) {
       }
     }
 
-  }, [pointQueue, popOldestPoint])
+  }, [pointQueue, popOldestPoint, activeTool, sketchName, addSegmentToSketch])
 
   const sketchView = useMemo(() => {
     return sketch.get('sketch')
@@ -441,7 +438,7 @@ function Sketch({ sketch, activeTool, addSegmentToSketch }) {
           const face_shape = new THREE.Shape()
           let count = 0
           for (const segment of face.exterior.segments) {
-            if (count == 0) {
+            if (count === 0) {
               face_shape.moveTo(segment.start.x, segment.start.y)
             }
             face_shape.lineTo(segment.end.x, segment.end.y)
@@ -453,7 +450,7 @@ function Sketch({ sketch, activeTool, addSegmentToSketch }) {
 
             count = 0
             for (const segment of interior.segments) {
-              if (count == 0) {
+              if (count === 0) {
                 hole_path.moveTo(segment.start.x, segment.start.y)
               }
               hole_path.lineTo(segment.end.x, segment.end.y)
@@ -506,63 +503,6 @@ function Part({ mesh }) {
     <>
       <Wireframe mesh={mesh} style="solid"></Wireframe>
     </>
-  )
-}
-
-function Solid({ mesh, style }) {
-  const ref = useRef()
-  // useHelper(ref, VertexNormalsHelper, .3, "green");
-  const [hovered, hover] = useState(false)
-  const positions = new Float32Array(
-    mesh.vertices.flatMap((v) => [v.x, v.y, v.z])
-  )
-  const normals = new Float32Array(mesh.normals.flatMap((v) => [v.x, v.y, v.z]))
-  const indices = new Uint16Array(mesh.indices)
-
-  return (
-    <mesh
-      ref={ref}
-      onPointerOver={(event) => hover(false)}
-      onPointerOut={(event) => hover(false)}
-    >
-      <bufferGeometry attach="geometry">
-        <bufferAttribute
-          attach="attributes-position"
-          array={positions}
-          count={positions.length / 3}
-          itemSize={3}
-        />
-        <bufferAttribute
-          attach="attributes-normal"
-          array={normals}
-          count={normals.length / 3}
-          itemSize={3}
-        />
-        <bufferAttribute
-          attach="index"
-          array={indices}
-          count={indices.length}
-          itemSize={1}
-        />
-      </bufferGeometry>
-      {style === 'solid' && (
-        <meshStandardMaterial
-          metalness={0.75}
-          roughness={0.17}
-          color={hovered ? 'hotpink' : '#006B3C'}
-          side={THREE.DoubleSide}
-        />
-      )}
-
-      {style === 'plane' && (
-        <meshStandardMaterial
-          color="#006B3C"
-          opacity={0.1}
-          transparent
-          side={THREE.DoubleSide}
-        />
-      )}
-    </mesh>
   )
 }
 
@@ -664,30 +604,6 @@ function Plane({ plane }) {
   )
 }
 
-function Box(props) {
-  // This reference gives us direct access to the THREE.Mesh object
-  const ref = useRef()
-  // Hold state for hovered and clicked events
-  const [hovered, hover] = useState(false)
-  const [clicked, click] = useState(false)
-  // Subscribe this component to the render-loop, rotate the mesh every frame
-  useFrame((state, delta) => (ref.current.rotation.x += delta))
-  // Return the view, these are regular Threejs elements expressed in JSX
-  return (
-    <mesh
-      {...props}
-      ref={ref}
-      scale={clicked ? 1.5 : 1}
-      onClick={(event) => click(!clicked)}
-      onPointerOver={(event) => hover(true)}
-      onPointerOut={(event) => hover(false)}
-    >
-      <boxGeometry args={[1, 1, 1]} />
-      <meshStandardMaterial color={hovered ? 'hotpink' : 'orange'} />
-    </mesh>
-  )
-}
-
 const SketchPoint = React.memo(function SketchPoint({
   x,
   y,
@@ -697,16 +613,15 @@ const SketchPoint = React.memo(function SketchPoint({
   onPointerOverCb,
   onPointerOutCb,
 }) {
-  const point = [x, y, z]
-  const sketch_point = [sketch_x, sketch_y]
+  const point = useMemo(() => [x, y, z], [x, y, z]);
+  const sketch_point = useMemo(() => [sketch_x, sketch_y], [sketch_x, sketch_y]);
   const [hovered, hover] = useState(false)
 
   const dot = useMemo(() => {
-    console.log('rendering a new dot')
     const dotGeometry = new THREE.BufferGeometry()
     dotGeometry.setAttribute(
       'position',
-      new THREE.BufferAttribute(new Float32Array(point), 3)
+      new THREE.BufferAttribute(new Float32Array([x, y, z]), 3)
     )
     const d = new THREE.Points(dotGeometry)
     return d
@@ -715,26 +630,22 @@ const SketchPoint = React.memo(function SketchPoint({
   const onPointerOver = useCallback(
     (event) => {
       console.log('pointer over: ', point)
-
       onPointerOverCb(point, sketch_point)
       hover(true)
-      // event.nativeEvent.preventDefault();
     },
-    [x, y, z, sketch_x, sketch_y, hover, onPointerOverCb]
+    [hover, onPointerOverCb, point, sketch_point]
   )
 
   const onPointerOut = useCallback(
     (event) => {
       onPointerOutCb(point, sketch_point)
       hover(false)
-      // event.nativeEvent.preventDefault();
     },
-    [hover, onPointerOutCb]
+    [hover, onPointerOutCb, point, sketch_point]
   )
 
   return (
     <mesh
-      // onPointerClick={onPointerClick}
       onPointerOver={onPointerOver}
       onPointerOut={onPointerOut}
     >
