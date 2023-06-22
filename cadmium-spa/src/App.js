@@ -4,18 +4,16 @@ import { MantineProvider, ColorSchemeProvider } from '@mantine/core'
 import { useHotkeys, useLocalStorage } from '@mantine/hooks'
 import MainWindow from './MainWindow'
 
-
 // import init { greet, demo } from "cadmium-js";
 // import init, * as Truck from "./truck_js.js";
 // import init, * as Truck from "truck-js";
 
-import { default as init, new_project } from "cadmium-js";
+import { default as init, new_project } from 'cadmium-js'
 
 function App() {
-  const [project, setProject] = useState(null);
-  const [, updateState] = React.useState();
-  const forceUpdate = React.useCallback(() => updateState({}), []);
-
+  const [project, setProject] = useState(null)
+  const [, updateState] = React.useState()
+  const forceUpdate = React.useCallback(() => updateState({}), [])
 
   const [colorScheme, setColorScheme] = useLocalStorage({
     key: 'mantine-color-scheme',
@@ -29,22 +27,20 @@ function App() {
   useHotkeys([['mod+J', () => toggleColorScheme()]])
 
   const runOnLoad = async () => {
-    await init();
-    const project = new_project();
-    const a = project.get_workbench("Workbench 1");
-    setProject(project);
+    await init()
+    const project = new_project()
+    const a = project.get_workbench('Workbench 1')
+    setProject(project)
   }
 
   useEffect(() => {
-    runOnLoad();
-  }, []);
+    runOnLoad()
+  }, [])
 
   // const forceUpdate = () => {
   //   console.log("force update");
   //   setProject(project);
   // }
-
-
 
   return (
     <div className="App">
@@ -58,11 +54,14 @@ function App() {
             withGlobalStyles
             withNormalizeCSS
           >
-            <MainWindow project={project} forceUpdate={forceUpdate}></MainWindow>
+            <MainWindow
+              project={project}
+              forceUpdate={forceUpdate}
+            ></MainWindow>
           </MantineProvider>
         </ColorSchemeProvider>
       </header>
-    </div >
+    </div>
   )
 }
 

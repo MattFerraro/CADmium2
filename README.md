@@ -40,6 +40,11 @@ npm run build-electron
 npm run elect
 ```
 
+To format with Prettier:
+```
+npx prettier --write .
+```
+
 
 # TODO (code only)
 
