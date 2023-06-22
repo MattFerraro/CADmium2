@@ -157,7 +157,7 @@ function Sketch({ sketch, activeTool, addSegmentToSketch }) {
     if (activeTool === 'line') {
       if (pointQueue.length > 0) {
 
-        const big_string_array = pointQueue.map((el, idx) => { return "id: " + idx + " el: " + el.x.toFixed(6) + ", " + el.y.toFixed(6) });
+        const big_string_array = pointQueue.map((el, idx) => { return "id: " + idx + " el: " + el.x.toFixed(6) + ", " + el.y.toFixed(6) + ", " + el.z.toFixed(6) });
         const big_string = big_string_array.join(", ");
 
         console.log(

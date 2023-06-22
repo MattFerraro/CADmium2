@@ -29,9 +29,8 @@ impl PartialEq for Point {
     fn eq(&self, other: &Self) -> bool {
         let x_close = (self.x - other.x).abs() <= 0.00001;
         let y_close = (self.y - other.y).abs() <= 0.00001;
-        let id_equal = self.id == other.id;
-
-        x_close && y_close && id_equal
+        // let id_equal = self.id == other.id;
+        x_close && y_close
     }
 }
 impl Eq for Point {}
