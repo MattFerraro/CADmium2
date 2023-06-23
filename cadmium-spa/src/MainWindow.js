@@ -52,6 +52,19 @@ function MainWindow({ project, forceUpdate }) {
   // this controls which mode the workbench is in, either "3D" or "sketch"
   const [mode, setMode] = useState('3D')
   const [activeTool, setActiveTool] = useState(null)
+  const [selectedForOperation, setSelectedForOperation] = useState([])
+  const [selecting, setSelecting] = useState(null)
+
+  useEffect(() => {
+    if (!project || !selecting || !selectedForOperation) {
+      // console.log("no project yet")
+      return
+    }
+    // console.log("Selecting: ", selecting, "selectedForOperation: ", selectedForOperation)
+    const indices = selectedForOperation.map(face_object => parseInt(face_object.value))
+    project.set_selected_for_operation(activeTab, selecting.source.step_name, selecting.source.parameter_name, selecting.source.sketch_name, indices)
+    forceUpdate()
+  }, [selectedForOperation, selecting, activeTab, project])
 
   useEffect(() => {
     setActiveTool(null)
@@ -66,7 +79,6 @@ function MainWindow({ project, forceUpdate }) {
     workbenchView = steps && workbench.create_view(1000)
   }
   const solids = workbenchView && workbenchView.solids
-  // console.log("solids:", solids);
 
   const setStepParameters = (step_name, parameter_names, parameter_values) => {
     console.log('SETTING PARAMS')
@@ -94,6 +106,26 @@ function MainWindow({ project, forceUpdate }) {
     ],
   ])
 
+  const toggleFaceSelected = (sketch, index) => {
+    // do we have an ordered set in javascript?
+    const keyString = sketch + "::Face " + index
+    const value = index + ""
+    const faceObject = { value: value, label: keyString }
+
+    console.log("toggling face for sketch and index: ", keyString)
+
+    const location = selectedForOperation.findIndex((el) => { return el.label === faceObject.label })
+    const newValue = [...selectedForOperation]
+    if (location === -1) {
+      // this key is not yet in the list, so let's add it
+      newValue.push(faceObject)
+    } else {
+      // this key IS in the list, so remove it
+      newValue.splice(location, 1)
+    }
+    setSelectedForOperation(newValue)
+  }
+
   return (
     <AppShell
       padding="sm"
@@ -117,6 +149,10 @@ function MainWindow({ project, forceUpdate }) {
                   hasAttention={stepWithAttention === index}
                   grabAttention={() => setStepWithAttention(index)}
                   cedeAttention={() => setStepWithAttention(null)}
+                  selecting={selecting}
+                  setSelecting={setSelecting}
+                  selectedForOperation={selectedForOperation}
+                  setSelectedForOperation={setSelectedForOperation}
                   step={step}
                 ></HistoryElement>
               )
@@ -256,9 +292,13 @@ function MainWindow({ project, forceUpdate }) {
     >
       {activeTab === 'Workbench 1' && (
         <WorkbenchPane
+          toggleFaceSelected={toggleFaceSelected}
           workbenchView={workbenchView}
           addSegmentToSketch={addSegmentToSketch}
           activeTool={activeTool}
+          setSelecting={setSelecting}
+          selectedForOperation={selectedForOperation}
+          setSelectedForOperation={setSelectedForOperation}
         ></WorkbenchPane>
       )}
       {activeTab === 'Assembly 1' && <AssemblyPane></AssemblyPane>}
@@ -324,6 +364,10 @@ function HistoryElement({
   cedeAttention,
   setStepParameters,
   setMode,
+  selectedForOperation,
+  setSelectedForOperation,
+  selecting,
+  setSelecting,
 }) {
   // const theme = useMantineTheme();
 
@@ -364,7 +408,7 @@ function HistoryElement({
   )
 
   if (step instanceof NewExtrudeStep) {
-    optionsForm = ExtrudeStepForm(step, setStepParameters, onSave)
+    optionsForm = ExtrudeStepForm(step, setStepParameters, onSave, setSelecting, selectedForOperation, setSelectedForOperation)
   }
 
   if (step instanceof NewSketchStep) {
@@ -404,16 +448,41 @@ const SketchStepForm = (step, setStepParameters, close) => {
   )
 }
 
-const ExtrudeStepForm = (step, setStepParameters, close) => {
+const ExtrudeStepForm = (step, setStepParameters, close, setSelecting, selectedForOperation, setSelectedForOperation) => {
   const [depthValue, setDepthValue] = useState(20)
 
-  console.log("Extrude step form:", step);
+  // console.log("Extrude step form:", step)
 
-  const [faces, setFaces] = useState(['matt']);
+  const allFaceData = step.faces.map((face_id) => {
+    return {
+      value: face_id + "",
+      label: step.sketch + "::Face " + face_id,
+      // source: {
+      //   step_name: step.name,
+      //   parameter_name: "faces",
+      // }
+    }
+  })
+  // console.log("All face data:", allFaceData)
+  const selectedFaces = allFaceData.map(face_object => face_object.value)
+
+  const [faces, setFaces] = useState(selectedFaces)
 
   function onSave(e) {
     setStepParameters(step.name, ['depth'], [depthValue])
     close()
+  }
+
+  function onFocus(e) {
+    // console.log("Focus grabbed", e);
+    // setSelectedForOperation(allFaceData.map(face_object => face_object.label))
+    setSelectedForOperation(allFaceData)
+    setSelecting({ source: { step_name: step.name, parameter_name: "faces", sketch_name: step.sketch } })
+  }
+
+  function onBlur(e) {
+    // console.log("Blurred", e)
+    // setSelecting(false)
   }
 
   return (
@@ -422,9 +491,11 @@ const ExtrudeStepForm = (step, setStepParameters, close) => {
         <MultiSelect
           label={"Faces"}
           clearable
+          onFocus={onFocus}
+          onBlur={onBlur}
           value={faces}
           onChange={setFaces}
-          data={[{ value: "matt", label: "Matt" }]} />
+          data={allFaceData} />
       </div>
 
       <div className="options-form-element">

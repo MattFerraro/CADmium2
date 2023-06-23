@@ -53,6 +53,41 @@ impl Project {
     }
 
     #[wasm_bindgen]
+    pub fn set_selected_for_operation(
+        &mut self,
+        workbench_name: &str,
+        step_name: &str,
+        parameter_name: &str,
+        sketch_name: &str,
+        selection: Array,
+    ) {
+        let selection: Vec<u64> = selection
+            .iter()
+            .map(|name| name.as_f64().unwrap() as u64)
+            .collect();
+
+        log!(
+            "Rust: wb name: {} step name: {} param name: {} sketch_name {} selection {:?}",
+            workbench_name,
+            step_name,
+            parameter_name,
+            sketch_name,
+            selection
+        );
+
+        match self.0.set_selected_for_operation(
+            workbench_name,
+            step_name,
+            parameter_name,
+            sketch_name,
+            selection,
+        ) {
+            Ok(_) => (),
+            Err(e) => log!("Error: {}", e),
+        }
+    }
+
+    #[wasm_bindgen]
     pub fn add_segment_to_sketch(
         &mut self,
         workbench_name: String,

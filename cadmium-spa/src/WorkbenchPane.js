@@ -6,18 +6,14 @@ import {
   // Environment,
   Text,
   Line,
+  OrthographicCamera,
 } from '@react-three/drei'
 import * as THREE from 'three'
 // import studio_2_1k from './images/studio_2_1k.hdr'
-// import { VertexNormalsHelper } from "three/examples/jsm/helpers/VertexNormalsHelper";
 
-// import { useThree } from '@react-three/fiber'
-
-// const sab = new SharedArrayBuffer(1024);
-// const ta = new Uint8Array(sab);
 let someGlobalValue = 0
 
-function WorkbenchPane({ workbenchView, activeTool, addSegmentToSketch }) {
+function WorkbenchPane({ workbenchView, activeTool, addSegmentToSketch, toggleFaceSelected, selectedForOperation, setSelectedForOperation }) {
   let parts = null
   if (workbenchView) {
     parts = workbenchView.solids.map((solid) => solid.get('solid').get_mesh())
@@ -29,7 +25,7 @@ function WorkbenchPane({ workbenchView, activeTool, addSegmentToSketch }) {
   let sketches = null
   if (workbenchView) {
     sketches = workbenchView.sketches
-    console.log('sketches:', sketches)
+    // console.log('sketches:', sketches)
   }
 
   const mouseConfig = useCallback((camControls) => {
@@ -48,8 +44,8 @@ function WorkbenchPane({ workbenchView, activeTool, addSegmentToSketch }) {
     // see https://github.com/yomotsu/camera-controls/blob/29eac5b50e69f0cf6792b8c3c12f5c86ad621222/src/types.ts
   }, [])
 
-  const overallScale = 100
 
+  const overallScale = 2000
   return (
     <Canvas
       linear={true}
@@ -57,8 +53,8 @@ function WorkbenchPane({ workbenchView, activeTool, addSegmentToSketch }) {
       orthographic
       camera={{
         far: 50000,
-        near: 0.0,
-        zoom: 4.0,
+        near: 0.01,
+        zoom: 2.0,
         position: [1 * overallScale, 0 * overallScale, 0 * overallScale],
         up: [0, 0, 1],
       }}
@@ -68,7 +64,6 @@ function WorkbenchPane({ workbenchView, activeTool, addSegmentToSketch }) {
       }}
     >
       {/* <Environment files={studio_2_1k} /> */}
-
       <CameraControls
         ref={mouseConfig}
         dollyToCursor={true}
@@ -87,37 +82,45 @@ function WorkbenchPane({ workbenchView, activeTool, addSegmentToSketch }) {
       <pointLight
         position={[-5 * overallScale, -5 * overallScale, 5 * overallScale]}
       />
-
       <pointLight
         position={[0 * overallScale, 0 * overallScale, -5 * overallScale]}
       />
 
-      {parts &&
+      {
+        parts &&
         parts.map((part, index) => {
           return <Part key={index} mesh={part}></Part>
-        })}
+        })
+      }
 
-      {planes &&
+      {
+        planes &&
         planes.map((plane, index) => {
           return <Plane key={index} plane={plane}></Plane>
-        })}
+        })
+      }
 
-      {sketches &&
+      {
+        sketches &&
         sketches.map((sketch, index) => {
           return (
             <Sketch
               key={index}
               sketch={sketch}
+              toggleFaceSelected={toggleFaceSelected}
               activeTool={activeTool}
               addSegmentToSketch={addSegmentToSketch}
+              selectedForOperation={selectedForOperation}
+              setSelectedForOperation={setSelectedForOperation}
             ></Sketch>
           )
-        })}
-    </Canvas>
+        })
+      }
+    </Canvas >
   )
 }
 
-function Sketch({ sketch, activeTool, addSegmentToSketch }) {
+function Sketch({ sketch, activeTool, addSegmentToSketch, toggleFaceSelected, selectedForOperation, setSelectedForOperation }) {
   const sketchName = useMemo(() => {
     return sketch.get('name')
   }, [sketch])
@@ -157,10 +160,10 @@ function Sketch({ sketch, activeTool, addSegmentToSketch }) {
         const big_string_array = pointQueue.map((el, idx) => { return "id: " + idx + " el: " + el.x.toFixed(6) + ", " + el.y.toFixed(6) + ", " + el.z.toFixed(6) });
         const big_string = big_string_array.join(", ");
 
-        console.log(
-          'Point Queue Changed: ',
-          big_string
-        )
+        // console.log(
+        //   'Point Queue Changed: ',
+        //   big_string
+        // )
       }
 
 
@@ -325,7 +328,7 @@ function Sketch({ sketch, activeTool, addSegmentToSketch }) {
   // }, []);
 
   const renderablePoints = useMemo(() => {
-    console.log('recomputing renderable Points')
+    // console.log('recomputing renderable Points')
     const thePoints = []
     const uniqueKeys = new Set()
     for (let i = 0; i < sketchView.segments.length; i++) {
@@ -435,49 +438,19 @@ function Sketch({ sketch, activeTool, addSegmentToSketch }) {
 
       {sketchView &&
         sketchView.faces_2d.map((face, index) => {
-          const face_shape = new THREE.Shape()
-          let count = 0
-          for (const segment of face.exterior.segments) {
-            if (count === 0) {
-              face_shape.moveTo(segment.start.x, segment.start.y)
-            }
-            face_shape.lineTo(segment.end.x, segment.end.y)
-            count += 1
-          }
-
-          for (const interior of face.interiors) {
-            const hole_path = new THREE.Path()
-
-            count = 0
-            for (const segment of interior.segments) {
-              if (count === 0) {
-                hole_path.moveTo(segment.start.x, segment.start.y)
-              }
-              hole_path.lineTo(segment.end.x, segment.end.y)
-              count += 1
-            }
-
-            face_shape.holes.push(hole_path)
-          }
-
-          const geometry = new THREE.ShapeGeometry(face_shape)
-          return (
-            <mesh key={index} rotation={eulerAngles}>
-              <primitive object={geometry}></primitive>
-              <meshStandardMaterial
-                color="#006B3C"
-                opacity={0.2}
-                transparent
-                side={THREE.DoubleSide}
-                depthWrite={false}
-              />
-            </mesh>
-          )
+          return <SketchFace
+            toggleFaceSelected={toggleFaceSelected}
+            eulerAngles={eulerAngles}
+            key={index}
+            index={index}
+            face={face}
+            sketchName={sketchName}
+            selectedForOperation={selectedForOperation}
+            setSelectedForOperation={setSelectedForOperation}
+          ></SketchFace>
         })}
 
-      {renderablePoints.map((pointObject, index) => {
-        // const segment2d = sketchView.segments_2d[index];
-        // console.log("Segment: ", segment, segment2d);
+      {renderablePoints.map((pointObject) => {
         const point_2d = pointObject['2d']
         const point_3d = pointObject['3d']
         const keyName = pointObject['key']
@@ -658,6 +631,60 @@ const SketchPoint = React.memo(function SketchPoint({
       </primitive>
     </mesh>
   )
+})
+
+const SketchFace = React.memo(function SketchFace({ face, eulerAngles, index, toggleFaceSelected, sketchName, selectedForOperation, setSelectedForOperation }) {
+  const [hovered, setHovered] = useState(false);
+
+  const geometry = useMemo(() => {
+    const face_shape = new THREE.Shape()
+    let count = 0
+    for (const segment of face.exterior.segments) {
+      if (count === 0) {
+        face_shape.moveTo(segment.start.x, segment.start.y)
+      }
+      face_shape.lineTo(segment.end.x, segment.end.y)
+      count += 1
+    }
+
+    for (const interior of face.interiors) {
+      const hole_path = new THREE.Path()
+
+      count = 0
+      for (const segment of interior.segments) {
+        if (count === 0) {
+          hole_path.moveTo(segment.start.x, segment.start.y)
+        }
+        hole_path.lineTo(segment.end.x, segment.end.y)
+        count += 1
+      }
+
+      face_shape.holes.push(hole_path)
+    }
+
+    const geom = new THREE.ShapeGeometry(face_shape)
+    return geom;
+  })
+
+  const onClick = (e) => {
+    console.log("Clicked a face with index: ", index, e);
+    toggleFaceSelected(sketchName, index);
+  }
+
+  return <mesh
+    rotation={eulerAngles}
+    onPointerOver={(event) => setHovered(true)}
+    onClick={onClick}
+    onPointerOut={(event) => setHovered(false)}>
+    <primitive object={geometry}></primitive>
+    <meshStandardMaterial
+      color={hovered ? "#FF0000" : "#006B3C"}
+      opacity={0.2}
+      transparent
+      side={THREE.DoubleSide}
+      depthWrite={false}
+    />
+  </mesh>
 })
 
 export default WorkbenchPane

@@ -59,6 +59,7 @@ npx prettier --write .
 
 # TODO (features)
 
+- button for easily snapping the view to front/top/right, and fitting bounds
 - add sketch.get_bounds(), either to sketch or sketchView or both
 - add ability to edit the name of a step
 - on mouseover for a part name, highlight it in 3D

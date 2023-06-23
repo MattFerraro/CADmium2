@@ -217,6 +217,44 @@ impl Workbench {
         wbv
     }
 
+    pub fn set_selected_for_operation(
+        &mut self,
+        step_name: &str,
+        parameter_name: &str,
+        sketch_name: &str,
+        selection: Vec<u64>,
+    ) -> Result<(), String> {
+        for step in self.steps.iter_mut() {
+            match step {
+                Step::Extrusion {
+                    name,
+                    extrusion,
+                    sketch,
+                    faces,
+                } => {
+                    if name == step_name {
+                        match parameter_name {
+                            "faces" => {
+                                faces.clear();
+                                faces.extend(selection.iter().map(|el| *el as usize));
+                                return Ok(());
+                            }
+                            _ => {
+                                return Err(format!(
+                                    "No parameter named {} for step {}",
+                                    parameter_name, step_name
+                                ));
+                            }
+                        }
+                    }
+                }
+                _ => {}
+            }
+        }
+
+        return Err(format!("No step named {}", step_name));
+    }
+
     pub fn add_segment_to_sketch(
         &mut self,
         sketch_name: &str,

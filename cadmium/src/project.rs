@@ -57,6 +57,28 @@ impl Project {
         return Ok(());
     }
 
+    pub fn set_selected_for_operation(
+        &mut self,
+        workbench_name: &str,
+        step_name: &str,
+        parameter_name: &str,
+        sketch_name: &str,
+        selection: Vec<u64>,
+    ) -> Result<(), String> {
+        for wb in self.workbenches.iter_mut() {
+            if wb.name == workbench_name {
+                return wb.set_selected_for_operation(
+                    step_name,
+                    parameter_name,
+                    sketch_name,
+                    selection,
+                );
+            }
+        }
+
+        return Err(format!("No workbench named {}", workbench_name));
+    }
+
     pub fn add_segment_to_sketch(
         &mut self,
         workbench_name: &str,
