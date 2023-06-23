@@ -1,9 +1,9 @@
 {
   "files": {
     "main.css": "https://mattferraro.github.io/CADmium2/static/css/main.eb631f0f.css",
-    "main.js": "https://mattferraro.github.io/CADmium2/static/js/main.834c3a6f.js",
+    "main.js": "https://mattferraro.github.io/CADmium2/static/js/main.b5730778.js",
     "static/js/787.11f74825.chunk.js": "https://mattferraro.github.io/CADmium2/static/js/787.11f74825.chunk.js",
-    "static/media/cadmium_js_bg.wasm": "https://mattferraro.github.io/CADmium2/static/media/cadmium_js_bg.edf3db44328d6ee84de3.wasm",
+    "static/media/cadmium_js_bg.wasm": "https://mattferraro.github.io/CADmium2/static/media/cadmium_js_bg.dbdf6fa1a66d89a0bfe3.wasm",
     "static/media/logo.svg": "https://mattferraro.github.io/CADmium2/static/media/logo.c112819468e9e1c76954f15e22e38976.svg",
     "static/media/cube_min.svg": "https://mattferraro.github.io/CADmium2/static/media/cube_min.1022d8076f10916872648aeb085ced26.svg",
     "static/media/extrude_min.svg": "https://mattferraro.github.io/CADmium2/static/media/extrude_min.5ab9b7a7c1bf5e92d7412622c74fd16e.svg",
@@ -12,11 +12,11 @@
     "static/media/sketch_min.svg": "https://mattferraro.github.io/CADmium2/static/media/sketch_min.0078c21dc9e98b29eb435ab44bd0f229.svg",
     "static/media/plane_min.svg": "https://mattferraro.github.io/CADmium2/static/media/plane_min.1515b07d80cdd2062c45e0412d7a2429.svg",
     "main.eb631f0f.css.map": "https://mattferraro.github.io/CADmium2/static/css/main.eb631f0f.css.map",
-    "main.834c3a6f.js.map": "https://mattferraro.github.io/CADmium2/static/js/main.834c3a6f.js.map",
+    "main.b5730778.js.map": "https://mattferraro.github.io/CADmium2/static/js/main.b5730778.js.map",
     "787.11f74825.chunk.js.map": "https://mattferraro.github.io/CADmium2/static/js/787.11f74825.chunk.js.map"
   },
   "entrypoints": [
     "static/css/main.eb631f0f.css",
-    "static/js/main.834c3a6f.js"
+    "static/js/main.b5730778.js"
   ]
 }
